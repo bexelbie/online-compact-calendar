@@ -6,26 +6,49 @@
     <title>Compact Calendar</title>
   </head>
   <body>
-    <div class="year-nav no-print">
-      <button id="year-prev">&lt;</button>
-      <span id="year-display"></span>
-      <button id="year-next">&gt;</button>
+    <div class="calendar-wrapper">
+      <div class="calendar-header no-print">
+        <div class="year-nav">
+          <button id="year-prev">&lt;</button>
+          <span id="year-display"></span>
+          <button id="year-next">&gt;</button>
+        </div>
+        <div class="font-controls">
+          <button id="font-down">A&minus;</button>
+          <span id="font-size-display"></span>
+          <button id="font-up">A+</button>
+        </div>
+      </div>
+      <div id="calendar-container"></div>
     </div>
-
     <div class="upload-controls no-print">
       <div class="upload-group">
         <span class="color-dot green"></span>
-        <label for="green-ics">Green events:</label>
-        <input type="file" id="green-ics" accept=".ics,.ical" />
+        <label>Committed:</label>
+        <select id="green-mode" class="mode-select">
+          <option value="url">URL</option>
+          <option value="file">File</option>
+          <option value="clear">Clear</option>
+        </select>
+        <input type="text" id="green-url" placeholder="webcal:// or https://" class="url-input" />
+        <input type="file" id="green-ics" accept=".ics,.ical" class="file-input" hidden />
+        <button id="green-action" class="action-btn">Fetch</button>
+        <span id="green-status" class="load-status"></span>
       </div>
       <div class="upload-group">
         <span class="color-dot yellow"></span>
-        <label for="yellow-ics">Yellow events:</label>
-        <input type="file" id="yellow-ics" accept=".ics,.ical" />
+        <label>Possible:</label>
+        <select id="yellow-mode" class="mode-select">
+          <option value="url">URL</option>
+          <option value="file">File</option>
+          <option value="clear">Clear</option>
+        </select>
+        <input type="text" id="yellow-url" placeholder="webcal:// or https://" class="url-input" />
+        <input type="file" id="yellow-ics" accept=".ics,.ical" class="file-input" hidden />
+        <button id="yellow-action" class="action-btn">Fetch</button>
+        <span id="yellow-status" class="load-status"></span>
       </div>
     </div>
-
-    <div id="calendar-container"></div>
 
     <script type="module" src="/src/main.js"></script>
   </body>

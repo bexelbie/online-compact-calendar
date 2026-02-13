@@ -151,7 +151,28 @@ function computeEventPlacements(events, weeks) {
   return { placements, ongoingRows };
 }
 
-function appendEventCells(tr, placement, isOngoing, bandClass) {
+function eventsOverlap(eventA, eventB) {
+  const aStart = localDateNum(eventA.startDate);
+  const aEnd = localDateNum(eventA.endDate);
+  const bStart = localDateNum(eventB.startDate);
+  const bEnd = localDateNum(eventB.endDate);
+  return aStart <= bEnd && bStart <= aEnd;
+}
+
+function detectConflicts(yellowEvents, greenEvents) {
+  const conflicts = new Set();
+  for (const yellow of yellowEvents) {
+    for (const green of greenEvents) {
+      if (eventsOverlap(yellow, green)) {
+        conflicts.add(yellow);
+        break;
+      }
+    }
+  }
+  return conflicts;
+}
+
+function appendEventCells(tr, placement, isOngoing, bandClass, hasConflict) {
   if (placement) {
     const whatCell = document.createElement('td');
     whatCell.className = `event-what ${bandClass}`;
@@ -159,12 +180,12 @@ function appendEventCells(tr, placement, isOngoing, bandClass) {
     tr.appendChild(whatCell);
 
     const startCell = document.createElement('td');
-    startCell.className = `event-date ${bandClass}`;
+    startCell.className = `event-date ${bandClass}${hasConflict ? ' conflict' : ''}`;
     startCell.textContent = formatEventDate(placement.event.startDate);
     tr.appendChild(startCell);
 
     const endCell = document.createElement('td');
-    endCell.className = `event-date ${bandClass}`;
+    endCell.className = `event-date ${bandClass}${hasConflict ? ' conflict' : ''}`;
     endCell.textContent = formatEventDate(placement.event.endDate);
     tr.appendChild(endCell);
   } else if (isOngoing) {
@@ -191,11 +212,11 @@ const HEADER_COLUMNS = [
   { text: 'Sa', className: 'col-day weekend-header' },
   { text: 'Su', className: 'col-day weekend-header' },
   { text: '', className: 'spacer' },
-  { text: 'What', className: 'col-event-what' },
+  { text: 'Committed', className: 'col-event-what' },
   { text: 'Start', className: 'col-event-date' },
   { text: 'End', className: 'col-event-date' },
   { text: '', className: 'spacer' },
-  { text: 'What', className: 'col-event-what' },
+  { text: 'Possible', className: 'col-event-what' },
   { text: 'Start', className: 'col-event-date' },
   { text: 'End', className: 'col-event-date' },
 ];
@@ -209,10 +230,7 @@ export function renderCalendar(container, { weeks, holidays, greenEvents, yellow
 
   const greenPlacement = computeEventPlacements(greenEvents, weeks);
   const yellowPlacement = computeEventPlacements(yellowEvents, weeks);
-
-  const h1 = document.createElement('h1');
-  h1.textContent = `Compact Calendar ${year}`;
-  container.appendChild(h1);
+  const yellowConflicts = detectConflicts(yellowEvents, greenEvents);
 
   const table = document.createElement('table');
   table.className = 'compact-calendar';
@@ -274,17 +292,41 @@ export function renderCalendar(container, { weeks, holidays, greenEvents, yellow
     spacer1.className = 'spacer';
     tr.appendChild(spacer1);
 
-    appendEventCells(tr, greenPlacement.placements[weekIndex], greenPlacement.ongoingRows.has(weekIndex), 'green-band');
+    appendEventCells(tr, greenPlacement.placements[weekIndex], greenPlacement.ongoingRows.has(weekIndex), 'green-band', false);
 
     const spacer2 = document.createElement('td');
     spacer2.className = 'spacer';
     tr.appendChild(spacer2);
 
-    appendEventCells(tr, yellowPlacement.placements[weekIndex], yellowPlacement.ongoingRows.has(weekIndex), 'yellow-band');
+    const yellowP = yellowPlacement.placements[weekIndex];
+    const yellowHasConflict = yellowP ? yellowConflicts.has(yellowP.event) : false;
+    appendEventCells(tr, yellowP, yellowPlacement.ongoingRows.has(weekIndex), 'yellow-band', yellowHasConflict);
 
     tbody.appendChild(tr);
   }
 
   table.appendChild(tbody);
   container.appendChild(table);
+
+  if (holidays.length > 0) {
+    const section = document.createElement('div');
+    section.className = 'holiday-reference';
+
+    const heading = document.createElement('h2');
+    heading.textContent = `Public Holidays ${year}`;
+    section.appendChild(heading);
+
+    const list = document.createElement('ul');
+    const sorted = [...holidays].sort((a, b) => a.date - b.date);
+    for (const h of sorted) {
+      const li = document.createElement('li');
+      const dateStr = h.date.toLocaleDateString(undefined, {
+        weekday: 'short', month: 'short', day: 'numeric',
+      });
+      li.textContent = `${dateStr} — ${h.name}`;
+      list.appendChild(li);
+    }
+    section.appendChild(list);
+    container.appendChild(section);
+  }
 }

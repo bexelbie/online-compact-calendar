@@ -9,31 +9,25 @@
 
 body {
   font-family: 'Menlo', 'Consolas', 'Monaco', monospace;
-  font-size: 13px;
+  font-size: 15px;
   padding: 16px;
   background: #fff;
   color: #222;
 }
 
-h1 {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 12px;
-}
-
 /* --- Upload controls --- */
 .upload-controls {
+  margin-top: 16px;
   margin-bottom: 16px;
   display: flex;
-  gap: 24px;
-  align-items: center;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .upload-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .upload-group label {
@@ -51,22 +45,126 @@ h1 {
 .upload-group .color-dot.green { background: #b6d7a8; }
 .upload-group .color-dot.yellow { background: #ffe599; }
 
+.mode-select {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 2px 4px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+}
+
+.url-input {
+  width: 26em;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 3px 6px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.file-input {
+  font-size: 12px;
+}
+
+.action-btn {
+  font-family: inherit;
+  font-size: 12px;
+  padding: 3px 10px;
+  cursor: pointer;
+  border: 1px solid #999;
+  border-radius: 3px;
+  background: #f5f5f5;
+}
+
+.action-btn:hover {
+  background: #e0e0e0;
+}
+
+.load-status {
+  font-size: 11px;
+  color: #888;
+}
+
+.load-status.success {
+  color: #2e7d32;
+}
+
+.load-status.error {
+  color: #c62828;
+}
+
+/* --- Calendar wrapper: shrink-wraps header bar to table width --- */
+.calendar-wrapper {
+  display: inline-block;
+}
+
+/* --- Calendar header: year nav left, font controls right --- */
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #666;
+  color: #fff;
+  padding: 4px 8px;
+  margin-bottom: 0;
+  font-weight: bold;
+}
+
 .year-nav {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 6px;
 }
 
 .year-nav button {
-  font-size: 16px;
-  padding: 2px 8px;
+  font-size: 14px;
+  padding: 1px 7px;
   cursor: pointer;
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 3px;
+  font-family: inherit;
+}
+
+.year-nav button:hover {
+  background: rgba(255,255,255,0.15);
 }
 
 .year-nav span {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: bold;
+  min-width: 3.5em;
+  text-align: center;
+}
+
+.font-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.font-controls button {
+  font-size: 12px;
+  padding: 1px 6px;
+  cursor: pointer;
+  font-family: inherit;
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 3px;
+}
+
+.font-controls button:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+.font-controls span {
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+  min-width: 3.5em;
+  text-align: center;
 }
 
 /* --- Calendar table --- */
@@ -170,6 +268,12 @@ h1 {
   background: #ffe599;
 }
 
+/* Green + yellow overlap: green background, yellow text */
+.day.green-event.yellow-event {
+  background: #b6d7a8;
+  color: #b8860b;
+}
+
 /* Green event on first-day: green wins */
 .day.first-day.green-event {
   background: #b6d7a8;
@@ -206,6 +310,12 @@ h1 {
   color: #cc0000;
 }
 
+/* Green + yellow + holiday: red text wins, green background wins */
+.day.holiday.green-event.yellow-event {
+  background: #b6d7a8;
+  color: #cc0000;
+}
+
 /* Weekend holiday + event: muted red text, lighter event background */
 .day.weekend-holiday.green-event {
   background: #c8e6b8;
@@ -214,6 +324,18 @@ h1 {
 
 .day.weekend-holiday.yellow-event {
   background: #fff0b3;
+  color: #cc777a;
+}
+
+/* Weekend + green + yellow overlap: green wins background, grey text */
+.day.weekend.green-event.yellow-event {
+  background: #c8e6b8;
+  color: #999;
+}
+
+/* Weekend holiday + green + yellow: green wins, muted red text */
+.day.weekend-holiday.green-event.yellow-event {
+  background: #c8e6b8;
   color: #cc777a;
 }
 
@@ -239,6 +361,34 @@ h1 {
 .event-date {
   text-align: center;
   font-size: 12px;
+}
+
+/* Conflict indicator: yellow event dates that overlap with a committed (green) event */
+.event-date.conflict {
+  color: #cc0000;
+  font-weight: bold;
+}
+
+/* --- Holiday reference list --- */
+.holiday-reference {
+  margin-top: 24px;
+  padding-top: 12px;
+  border-top: 1px solid #ccc;
+}
+
+.holiday-reference h2 {
+  font-size: 1em;
+  margin-bottom: 8px;
+}
+
+.holiday-reference ul {
+  list-style: none;
+}
+
+.holiday-reference li {
+  font-size: 0.85em;
+  padding: 1px 0;
+  color: #cc0000;
 }
 
 /* --- Print styles --- */
