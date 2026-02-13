@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Compact Calendar</title>
+  </head>
+  <body>
+    <div class="year-nav no-print">
+      <button id="year-prev">&lt;</button>
+      <span id="year-display"></span>
+      <button id="year-next">&gt;</button>
+    </div>
+
+    <div class="upload-controls no-print">
+      <div class="upload-group">
+        <span class="color-dot green"></span>
+        <label for="green-ics">Green events:</label>
+        <input type="file" id="green-ics" accept=".ics,.ical" />
+      </div>
+      <div class="upload-group">
+        <span class="color-dot yellow"></span>
+        <label for="yellow-ics">Yellow events:</label>
+        <input type="file" id="yellow-ics" accept=".ics,.ical" />
+      </div>
+    </div>
+
+    <div id="calendar-container"></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,264 @@
+/* ABOUTME: Styles for the compact calendar grid, event bands, and print layout. */
+/* ABOUTME: Defines color rules for holidays, weekends, first-of-month, and event highlighting. */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Menlo', 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  padding: 16px;
+  background: #fff;
+  color: #222;
+}
+
+h1 {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+/* --- Upload controls --- */
+.upload-controls {
+  margin-bottom: 16px;
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.upload-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.upload-group label {
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.upload-group .color-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.upload-group .color-dot.green { background: #b6d7a8; }
+.upload-group .color-dot.yellow { background: #ffe599; }
+
+.year-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.year-nav button {
+  font-size: 16px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.year-nav span {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* --- Calendar table --- */
+.compact-calendar {
+  border-collapse: collapse;
+  white-space: nowrap;
+}
+
+.compact-calendar th,
+.compact-calendar td {
+  padding: 1px 4px;
+  text-align: center;
+  vertical-align: middle;
+  height: 1.4em;
+  line-height: 1.4em;
+}
+
+/* Header row */
+.compact-calendar thead th {
+  background: #666;
+  color: #fff;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.compact-calendar thead th.weekend-header {
+  background: #888;
+}
+
+/* Column widths */
+.col-week {
+  width: 2em;
+  text-align: right;
+  color: #666;
+}
+
+.col-month {
+  width: 5.5em;
+  text-align: left;
+  font-weight: bold;
+}
+
+.col-day {
+  width: 2em;
+}
+
+.col-event-what {
+  width: 16em;
+  text-align: left;
+}
+
+.col-event-date {
+  width: 4.5em;
+  text-align: center;
+}
+
+/* Spacer column between day grid and event bands */
+.spacer {
+  width: 8px;
+  border: none !important;
+}
+
+/* --- Day cells --- */
+.day {
+  font-variant-numeric: tabular-nums;
+}
+
+/* First day of month: blue background */
+.day.first-day {
+  background: #4a86c8;
+  color: #fff;
+  font-weight: bold;
+}
+
+/* Weekend: grey text */
+.day.weekend {
+  color: #999;
+  background: #f5f5f5;
+}
+
+/* Holiday on weekday: red text */
+.day.holiday {
+  color: #cc0000;
+  font-weight: bold;
+}
+
+/* Holiday on weekend: muted red text, weekend background unchanged */
+.day.weekend-holiday {
+  color: #cc777a;
+  font-weight: bold;
+  background: #f5f5f5;
+}
+
+/* Green event highlighting */
+.day.green-event {
+  background: #b6d7a8;
+}
+
+/* Yellow event highlighting */
+.day.yellow-event {
+  background: #ffe599;
+}
+
+/* Green event on first-day: green wins */
+.day.first-day.green-event {
+  background: #b6d7a8;
+  color: #fff;
+}
+
+/* Yellow event on first-day: yellow wins */
+.day.first-day.yellow-event {
+  background: #ffe599;
+  color: #222;
+}
+
+/* Weekend + green event: green background, grey text */
+.day.weekend.green-event {
+  background: #c8e6b8;
+  color: #999;
+}
+
+/* Weekend + yellow event: yellow background, grey text */
+.day.weekend.yellow-event {
+  background: #fff0b3;
+  color: #999;
+}
+
+/* Holiday + green event: red text, green background */
+.day.holiday.green-event {
+  background: #b6d7a8;
+  color: #cc0000;
+}
+
+/* Holiday + yellow event: red text, yellow background */
+.day.holiday.yellow-event {
+  background: #ffe599;
+  color: #cc0000;
+}
+
+/* Weekend holiday + event: muted red text, lighter event background */
+.day.weekend-holiday.green-event {
+  background: #c8e6b8;
+  color: #cc777a;
+}
+
+.day.weekend-holiday.yellow-event {
+  background: #fff0b3;
+  color: #cc777a;
+}
+
+/* --- Event band cells --- */
+.green-band {
+  background: #e8f5e2;
+  text-align: left;
+}
+
+.yellow-band {
+  background: #fef9e7;
+  text-align: left;
+}
+
+.event-what {
+  text-align: left;
+  font-size: 12px;
+  max-width: 16em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-date {
+  text-align: center;
+  font-size: 12px;
+}
+
+/* --- Print styles --- */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    padding: 0;
+    font-size: 11px;
+  }
+
+  .compact-calendar th,
+  .compact-calendar td {
+    padding: 0 2px;
+  }
+
+  .compact-calendar {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
