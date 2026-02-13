@@ -92,6 +92,7 @@ async function fetchIcsFromUrl(url, color) {
 
     statusEl.textContent = `${events.length} events`;
     statusEl.className = 'load-status success';
+    updateRefreshVisibility();
     loadAndRender();
   } catch (err) {
     console.error(`Failed to fetch ICS: ${err.message}`);
@@ -134,6 +135,25 @@ document.getElementById('year-next').addEventListener('click', () => {
   loadAndRender();
 });
 
+// Refresh button — re-fetches saved URLs
+const refreshBtn = document.getElementById('refresh-btn');
+
+function updateRefreshVisibility() {
+  const hasUrls = localStorage.getItem(STORAGE_KEY_GREEN_URL) || localStorage.getItem(STORAGE_KEY_YELLOW_URL);
+  refreshBtn.hidden = !hasUrls;
+}
+
+refreshBtn.addEventListener('click', async () => {
+  const greenUrl = localStorage.getItem(STORAGE_KEY_GREEN_URL);
+  const yellowUrl = localStorage.getItem(STORAGE_KEY_YELLOW_URL);
+  const fetches = [];
+  if (greenUrl) fetches.push(fetchIcsFromUrl(greenUrl, 'green'));
+  if (yellowUrl) fetches.push(fetchIcsFromUrl(yellowUrl, 'yellow'));
+  await Promise.all(fetches);
+});
+
+updateRefreshVisibility();
+
 // Font size controls
 const fontSizeDisplay = document.getElementById('font-size-display');
 let fontSize = parseInt(getComputedStyle(document.body).fontSize, 10);
@@ -175,8 +195,30 @@ function setupBand(color) {
       fileInput.hidden = true;
       actionBtn.textContent = 'Choose File';
       actionBtn.hidden = false;
+    } else if (mode === 'demo') {
+      urlInput.hidden = true;
+      fileInput.hidden = true;
+      actionBtn.hidden = true;
+      statusEl.textContent = 'Loading demo...';
+      const sampleFile = color === 'green' ? '/green-sample.ics' : '/yellow-sample.ics';
+      fetch(sampleFile)
+        .then(resp => resp.text())
+        .then(icsText => {
+          const events = parseICS(icsText);
+          if (color === 'green') {
+            state.allGreenEvents = events;
+          } else {
+            state.allYellowEvents = events;
+          }
+          statusEl.textContent = `${events.length} demo events`;
+          statusEl.className = 'load-status success';
+          loadAndRender();
+        })
+        .catch(err => {
+          statusEl.textContent = `Error: ${err.message}`;
+          statusEl.className = 'load-status error';
+        });
     } else if (mode === 'clear') {
-      // Clear events and saved URL, then reset to URL mode
       if (color === 'green') {
         state.allGreenEvents = [];
       } else {
@@ -189,6 +231,12 @@ function setupBand(color) {
       statusEl.className = 'load-status';
       modeSelect.value = 'url';
       applyMode('url');
+      updateRefreshVisibility();
+      // Show welcome banner again if both bands are empty
+      if (state.allGreenEvents.length === 0 && state.allYellowEvents.length === 0) {
+        localStorage.removeItem(STORAGE_KEY_WELCOMED);
+        welcomeBanner.classList.add('visible');
+      }
       loadAndRender();
     }
   }

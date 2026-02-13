@@ -8,7 +8,7 @@
   <body>
     <div id="welcome-banner" class="welcome-banner no-print">
       <button id="welcome-dismiss" class="welcome-dismiss" title="Dismiss">&times;</button>
-      <span>Set up your calendar below &mdash; pick a country for holidays, then load your events via URL or file.</span>
+      <span>Set up your calendar below &mdash; pick a country for holidays, then load your events via URL, file, or demo data using the dropdowns.</span>
     </div>
 
     <div class="calendar-wrapper">
@@ -17,6 +17,7 @@
           <button id="year-prev">&lt;</button>
           <span id="year-display"></span>
           <button id="year-next">&gt;</button>
+          <button id="refresh-btn" class="refresh-btn" title="Refresh calendar URLs" hidden>&#x21bb;</button>
         </div>
         <div class="font-controls">
           <button id="font-down">A&minus;</button>
@@ -38,6 +39,7 @@
         <select id="green-mode" class="mode-select">
           <option value="url">URL</option>
           <option value="file">File</option>
+          <option value="demo">Demo</option>
           <option value="clear">Clear</option>
         </select>
         <input type="text" id="green-url" placeholder="webcal:// or https://" class="url-input" />
@@ -51,6 +53,7 @@
         <select id="yellow-mode" class="mode-select">
           <option value="url">URL</option>
           <option value="file">File</option>
+          <option value="demo">Demo</option>
           <option value="clear">Clear</option>
         </select>
         <input type="text" id="yellow-url" placeholder="webcal:// or https://" class="url-input" />
@@ -58,6 +61,7 @@
         <button id="yellow-action" class="action-btn">Fetch</button>
         <span id="yellow-status" class="load-status"></span>
       </div>
+      <p class="controls-hint">For each band, choose <strong>URL</strong> to fetch a webcal link, <strong>File</strong> to load from your device, <strong>Demo</strong> to explore with sample data, or <strong>Clear</strong> to remove events.</p>
     </div>
 
     <div class="help-section no-print">
@@ -70,7 +74,11 @@
         <dd>Choose your country from the <strong>Holidays</strong> dropdown. The selection is saved and holiday data is cached locally for 30 days.</dd>
 
         <dt>Events</dt>
-        <dd>Load events from an ICS calendar URL (webcal:// or https://) or upload a .ics file.
+        <dd>Each event band has a dropdown with four options:
+          <strong>URL</strong> &mdash; enter a webcal:// or https:// calendar link and click Fetch;
+          <strong>File</strong> &mdash; upload a .ics file from your computer;
+          <strong>Demo</strong> &mdash; load sample data to see how the calendar looks;
+          <strong>Clear</strong> &mdash; remove loaded events.
           <strong>Committed</strong> (green) is for confirmed events; <strong>Possible</strong> (yellow) is for tentative ones.
           URLs are saved and automatically reloaded on your next visit.</dd>
 
@@ -79,7 +87,7 @@
           <span style="background:#dde3f0; padding:0 3px">Blue background</span> = first of the month.
           <span style="background:#b6d7a8; padding:0 3px">Green</span> = committed event.
           <span style="background:#ffe599; padding:0 3px">Yellow</span> = possible event.
-          When green and yellow overlap, the cell is green with gold text.
+          When green and yellow overlap, the cell is green with a yellow border.
           <span style="color:#c62828; font-weight:bold">Bold red text in the Possible column</span> = date conflicts with a committed event.</dd>
 
         <dt>Font size</dt>
@@ -101,7 +109,7 @@
         <dd>Holiday data is fetched from <a href="https://date.nager.at/" target="_blank" rel="noopener">Nager.Date</a>, a free public API. Requests go directly from your browser to their servers. Results are cached in your browser for 30 days to minimize API calls.</dd>
       </dl>
 
-      <p class="help-credits">Calendar layout inspired by <a href="https://davidseah.com/node/compact-calendar/" target="_blank" rel="noopener">David Seah's Compact Calendar</a>.</p>
+      <p class="help-credits">Calendar layout inspired by <a href="https://davidseah.com/node/compact-calendar/" target="_blank" rel="noopener">Sri Seah's Compact Calendar</a>. <a href="https://github.com/bexelbie/online-compact-calendar/issues" target="_blank" rel="noopener">Feedback &amp; ideas</a>.</p>
     </div>
 
     <script type="module" src="/src/main.js"></script>

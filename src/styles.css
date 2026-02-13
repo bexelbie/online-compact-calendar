@@ -97,6 +97,12 @@ body {
   gap: 6px;
 }
 
+.controls-hint {
+  margin: 4px 0 0 0;
+  font-size: 11px;
+  color: #666;
+}
+
 .upload-group {
   display: flex;
   align-items: center;
@@ -210,6 +216,22 @@ body {
   font-weight: bold;
   min-width: 3.5em;
   text-align: center;
+}
+
+.refresh-btn {
+  font-size: 15px;
+  padding: 1px 6px;
+  cursor: pointer;
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 3px;
+  font-family: inherit;
+  margin-left: 4px;
+}
+
+.refresh-btn:hover {
+  background: rgba(255,255,255,0.15);
 }
 
 .font-controls {
@@ -341,10 +363,11 @@ body {
   background: #ffe599;
 }
 
-/* Green + yellow overlap: green background, yellow text */
+/* Green + yellow overlap: green background, yellow box border */
 .day.green-event.yellow-event {
   background: #b6d7a8;
-  color: #b8860b;
+  color: #222;
+  border: 3px solid #e6a800;
 }
 
 /* Green event on first-day: green wins */
@@ -383,10 +406,11 @@ body {
   color: #cc0000;
 }
 
-/* Green + yellow + holiday: red text wins, green background wins */
+/* Green + yellow + holiday: red text wins, green background wins, yellow box */
 .day.holiday.green-event.yellow-event {
   background: #b6d7a8;
   color: #cc0000;
+  border: 3px solid #e6a800;
 }
 
 /* Weekend holiday + event: muted red text, lighter event background */
@@ -400,16 +424,18 @@ body {
   color: #cc777a;
 }
 
-/* Weekend + green + yellow overlap: green wins background, grey text */
+/* Weekend + green + yellow overlap: green wins background, grey text, yellow box */
 .day.weekend.green-event.yellow-event {
   background: #c8e6b8;
   color: #999;
+  border: 3px solid #e6a800;
 }
 
-/* Weekend holiday + green + yellow: green wins, muted red text */
+/* Weekend holiday + green + yellow: green wins, muted red text, yellow box */
 .day.weekend-holiday.green-event.yellow-event {
   background: #c8e6b8;
   color: #cc777a;
+  border: 3px solid #e6a800;
 }
 
 /* --- Event band cells --- */
