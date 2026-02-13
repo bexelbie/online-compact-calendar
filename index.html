@@ -6,6 +6,11 @@
     <title>Compact Calendar</title>
   </head>
   <body>
+    <div id="welcome-banner" class="welcome-banner no-print">
+      <button id="welcome-dismiss" class="welcome-dismiss" title="Dismiss">&times;</button>
+      <span>Set up your calendar below &mdash; pick a country for holidays, then load your events via URL or file.</span>
+    </div>
+
     <div class="calendar-wrapper">
       <div class="calendar-header no-print">
         <div class="year-nav">
@@ -22,6 +27,11 @@
       <div id="calendar-container"></div>
     </div>
     <div class="upload-controls no-print">
+      <div class="upload-group">
+        <label>Holidays:</label>
+        <select id="country-select" class="mode-select"></select>
+        <span id="country-status" class="load-status"></span>
+      </div>
       <div class="upload-group">
         <span class="color-dot green"></span>
         <label>Committed:</label>
@@ -48,6 +58,50 @@
         <button id="yellow-action" class="action-btn">Fetch</button>
         <span id="yellow-status" class="load-status"></span>
       </div>
+    </div>
+
+    <div class="help-section no-print">
+      <h2>How to use</h2>
+      <dl>
+        <dt>Year navigation</dt>
+        <dd>Use the <strong>&lt;</strong> and <strong>&gt;</strong> buttons in the header bar to move between years.</dd>
+
+        <dt>Holidays</dt>
+        <dd>Choose your country from the <strong>Holidays</strong> dropdown. The selection is saved and holiday data is cached locally for 30 days.</dd>
+
+        <dt>Events</dt>
+        <dd>Load events from an ICS calendar URL (webcal:// or https://) or upload a .ics file.
+          <strong>Committed</strong> (green) is for confirmed events; <strong>Possible</strong> (yellow) is for tentative ones.
+          URLs are saved and automatically reloaded on your next visit.</dd>
+
+        <dt>Reading the calendar</dt>
+        <dd>Each row is one ISO week (Mon–Sun). <span style="color:#cc0000">Red text</span> = public holiday.
+          <span style="background:#dde3f0; padding:0 3px">Blue background</span> = first of the month.
+          <span style="background:#b6d7a8; padding:0 3px">Green</span> = committed event.
+          <span style="background:#ffe599; padding:0 3px">Yellow</span> = possible event.
+          When green and yellow overlap, the cell is green with gold text.
+          <span style="color:#c62828; font-weight:bold">Bold red text in the Possible column</span> = date conflicts with a committed event.</dd>
+
+        <dt>Font size</dt>
+        <dd>Use <strong>A−</strong> / <strong>A+</strong> in the header bar. Range: 10–24px.</dd>
+
+        <dt>Printing</dt>
+        <dd>All controls and this help section are hidden when you print. Colors are preserved.</dd>
+      </dl>
+
+      <h2>Privacy &amp; data</h2>
+      <dl>
+        <dt>Your data stays in your browser</dt>
+        <dd>This app stores your preferences (country, calendar URLs) and cached holiday data in your browser's local storage. This data is purely functional — it exists so the app works between visits. It is not used for tracking, analytics, or advertising, and is never sent to third parties.</dd>
+
+        <dt>Calendar URL proxy</dt>
+        <dd>When you fetch a calendar by URL, the request is routed through this site's server to work around browser security restrictions (CORS). The server forwards the request to your calendar provider and returns the data to your browser. <strong>The server does not store, log, or retain your calendar URLs or event data.</strong> If your URL contains authentication tokens (as iCloud URLs do), be aware the server briefly sees them in transit.</dd>
+
+        <dt>Holiday API</dt>
+        <dd>Holiday data is fetched from <a href="https://date.nager.at/" target="_blank" rel="noopener">Nager.Date</a>, a free public API. Requests go directly from your browser to their servers. Results are cached in your browser for 30 days to minimize API calls.</dd>
+      </dl>
+
+      <p class="help-credits">Calendar layout inspired by <a href="https://davidseah.com/node/compact-calendar/" target="_blank" rel="noopener">David Seah's Compact Calendar</a>.</p>
     </div>
 
     <script type="module" src="/src/main.js"></script>

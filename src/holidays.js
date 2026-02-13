@@ -1,9 +1,137 @@
-// ABOUTME: Provides Czech Republic public holidays for a given year.
-// ABOUTME: Fetches from Nager.Date API with fallback to static calculation using Computus.
+// ABOUTME: Provides public holidays for a given year and country via Nager.Date API.
+// ABOUTME: Caches country list and holidays in localStorage with 30-day expiry.
+
+const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+function cacheGet(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const { data, timestamp } = JSON.parse(raw);
+    if (Date.now() - timestamp > CACHE_TTL_MS) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function cacheSet(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }));
+  } catch {
+    // localStorage full or unavailable — ignore
+  }
+}
+
+/**
+ * Remove expired cache entries on startup. Scans all localStorage keys
+ * matching our prefix and evicts those older than CACHE_TTL_MS.
+ */
+export function evictStaleCache() {
+  try {
+    const prefix = 'compact-cal-';
+    const keysToCheck = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(prefix) && key !== 'compact-cal-green-url'
+          && key !== 'compact-cal-yellow-url' && key !== 'compact-cal-country'
+          && key !== 'compact-cal-welcomed') {
+        keysToCheck.push(key);
+      }
+    }
+    for (const key of keysToCheck) {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      try {
+        const { timestamp } = JSON.parse(raw);
+        if (Date.now() - timestamp > CACHE_TTL_MS) {
+          localStorage.removeItem(key);
+        }
+      } catch {
+        // Malformed entry — remove it
+        localStorage.removeItem(key);
+      }
+    }
+  } catch {
+    // localStorage unavailable — ignore
+  }
+}
+
+/**
+ * Fetch the list of available countries from Nager.Date API.
+ * Returns [{ countryCode, name }]. Cached for 30 days.
+ */
+export async function fetchAvailableCountries() {
+  const cacheKey = 'compact-cal-countries';
+  const cached = cacheGet(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const response = await fetch('https://date.nager.at/api/v3/AvailableCountries');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    cacheSet(cacheKey, data);
+    return data;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Parse a "YYYY-MM-DD" string as a local date (not UTC).
+ */
+function parseLocalDate(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+/**
+ * Fetch public holidays from Nager.Date API for a given year and country.
+ * Cached per country+year for 30 days. Falls back to static Czech holidays
+ * for CZ, or empty array for other countries.
+ */
+export async function fetchHolidays(year, countryCode = 'CZ') {
+  const cacheKey = `compact-cal-holidays-${countryCode}-${year}`;
+  const cached = cacheGet(cacheKey);
+  if (cached) {
+    return cached.map((entry) => ({
+      ...entry,
+      date: new Date(entry.date),
+    }));
+  }
+
+  try {
+    const response = await fetch(
+      `https://date.nager.at/api/v3/publicholidays/${year}/${countryCode}`
+    );
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    const holidays = data.map((entry) => ({
+      date: parseLocalDate(entry.date),
+      name: entry.localName,
+    }));
+
+    // Store with serializable dates
+    const toCache = holidays.map((h) => ({
+      date: h.date.toISOString(),
+      name: h.name,
+    }));
+    cacheSet(cacheKey, toCache);
+
+    return holidays;
+  } catch {
+    if (countryCode === 'CZ') {
+      return getStaticHolidays(year);
+    }
+    return [];
+  }
+}
 
 /**
  * Calculate Easter Sunday for a given year using the Anonymous Gregorian algorithm.
- * Returns a Date object for Easter Sunday.
  */
 function computeEasterSunday(year) {
   const a = year % 19;
@@ -25,8 +153,7 @@ function computeEasterSunday(year) {
 }
 
 /**
- * Returns an array of Czech public holidays for the given year.
- * Each entry is { date: Date, name: string }.
+ * Static Czech public holidays (offline fallback for CZ only).
  */
 export function getStaticHolidays(year) {
   const easter = computeEasterSunday(year);
@@ -55,38 +182,7 @@ export function getStaticHolidays(year) {
 }
 
 /**
- * Parse a "YYYY-MM-DD" string as a local date (not UTC).
- */
-function parseLocalDate(dateStr) {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-
-/**
- * Fetch Czech public holidays from Nager.Date API.
- * Falls back to static holidays if the request fails.
- */
-export async function fetchHolidays(year) {
-  try {
-    const response = await fetch(
-      `https://date.nager.at/api/v3/publicholidays/${year}/CZ`
-    );
-    if (!response.ok) {
-      throw new Error(`API returned ${response.status}`);
-    }
-    const data = await response.json();
-    return data.map((entry) => ({
-      date: parseLocalDate(entry.date),
-      name: entry.localName,
-    }));
-  } catch {
-    return getStaticHolidays(year);
-  }
-}
-
-/**
  * Returns the holiday object if the given date falls on a holiday, null otherwise.
- * Compares by year-month-day only (ignores time).
  */
 export function isHoliday(date, holidays) {
   const y = date.getFullYear();

@@ -15,6 +15,79 @@ body {
   color: #222;
 }
 
+/* --- Welcome banner for first-time users --- */
+.welcome-banner {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  background: #fff3cd;
+  border: 1px solid #e0c36a;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #664d03;
+}
+
+.welcome-banner.visible {
+  display: flex;
+}
+
+.welcome-dismiss {
+  background: none;
+  border: 1px solid #c9a827;
+  border-radius: 3px;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: #664d03;
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+
+.welcome-dismiss:hover {
+  background: rgba(0,0,0,0.08);
+}
+
+/* --- Help section --- */
+.help-section {
+  margin-top: 32px;
+  padding-top: 16px;
+  border-top: 1px solid #ccc;
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 60em;
+}
+
+.help-section h2 {
+  font-size: 1em;
+  margin-bottom: 10px;
+}
+
+.help-section dl {
+  margin: 0;
+}
+
+.help-section dt {
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+.help-section dd {
+  margin-left: 0;
+  margin-bottom: 4px;
+}
+
+.help-credits {
+  margin-top: 12px;
+  font-size: 11px;
+  color: #888;
+}
+
+.help-credits a {
+  color: #666;
+}
+
 /* --- Upload controls --- */
 .upload-controls {
   margin-top: 16px;

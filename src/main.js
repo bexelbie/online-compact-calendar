@@ -3,15 +3,33 @@
 
 import './styles.css';
 import { generateYear } from './calendar-grid.js';
-import { fetchHolidays } from './holidays.js';
+import { fetchHolidays, fetchAvailableCountries, evictStaleCache } from './holidays.js';
 import { parseICS, getEventsForYear } from './ics-parser.js';
 import { renderCalendar } from './renderer.js';
 
+// Clean up expired cache entries on startup
+evictStaleCache();
+
 const STORAGE_KEY_GREEN_URL = 'compact-cal-green-url';
 const STORAGE_KEY_YELLOW_URL = 'compact-cal-yellow-url';
+const STORAGE_KEY_COUNTRY = 'compact-cal-country';
+const STORAGE_KEY_WELCOMED = 'compact-cal-welcomed';
+
+// Show welcome banner for first-time users (hide if they have saved URLs)
+const welcomeBanner = document.getElementById('welcome-banner');
+const hasSavedUrls = localStorage.getItem(STORAGE_KEY_GREEN_URL) || localStorage.getItem(STORAGE_KEY_YELLOW_URL);
+const wasDismissed = localStorage.getItem(STORAGE_KEY_WELCOMED);
+if (!hasSavedUrls && !wasDismissed) {
+  welcomeBanner.classList.add('visible');
+}
+document.getElementById('welcome-dismiss').addEventListener('click', () => {
+  welcomeBanner.classList.remove('visible');
+  localStorage.setItem(STORAGE_KEY_WELCOMED, '1');
+});
 
 const state = {
   year: new Date().getFullYear(),
+  countryCode: localStorage.getItem(STORAGE_KEY_COUNTRY) || 'CZ',
   holidays: [],
   greenEvents: [],
   yellowEvents: [],
@@ -26,7 +44,7 @@ async function loadAndRender() {
   yearDisplay.textContent = state.year;
   document.title = `Compact Calendar ${state.year}`;
 
-  state.holidays = await fetchHolidays(state.year);
+  state.holidays = await fetchHolidays(state.year, state.countryCode);
 
   state.greenEvents = getEventsForYear(state.allGreenEvents, state.year);
   state.yellowEvents = getEventsForYear(state.allYellowEvents, state.year);
@@ -211,6 +229,42 @@ function setupBand(color) {
 
 setupBand('green');
 setupBand('yellow');
+
+// Country dropdown setup
+const countrySelect = document.getElementById('country-select');
+const countryStatus = document.getElementById('country-status');
+
+async function populateCountryDropdown() {
+  countryStatus.textContent = 'Loading...';
+  const countries = await fetchAvailableCountries();
+  countrySelect.innerHTML = '';
+
+  if (countries.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = 'CZ';
+    opt.textContent = 'Czechia (offline)';
+    countrySelect.appendChild(opt);
+    countryStatus.textContent = '';
+    return;
+  }
+
+  for (const c of countries) {
+    const opt = document.createElement('option');
+    opt.value = c.countryCode;
+    opt.textContent = c.name;
+    countrySelect.appendChild(opt);
+  }
+  countrySelect.value = state.countryCode;
+  countryStatus.textContent = '';
+}
+
+countrySelect.addEventListener('change', () => {
+  state.countryCode = countrySelect.value;
+  localStorage.setItem(STORAGE_KEY_COUNTRY, state.countryCode);
+  loadAndRender();
+});
+
+populateCountryDropdown();
 
 // Initial render (holidays + grid even before ICS loads)
 loadAndRender();

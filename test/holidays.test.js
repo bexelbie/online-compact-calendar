@@ -1,8 +1,8 @@
-// ABOUTME: Tests for Czech public holiday calculation and lookup functions.
-// ABOUTME: Covers static holiday generation, Easter computation, and date matching.
+// ABOUTME: Tests for public holiday calculation, lookup, and country list functions.
+// ABOUTME: Covers static holiday generation, Easter computation, date matching, and API exports.
 
 import { describe, it, expect } from 'vitest';
-import { getStaticHolidays, isHoliday } from '../src/holidays.js';
+import { getStaticHolidays, isHoliday, fetchAvailableCountries, fetchHolidays, evictStaleCache } from '../src/holidays.js';
 
 describe('getStaticHolidays', () => {
   it('returns 13 holidays for 2026', () => {
@@ -83,5 +83,32 @@ describe('isHoliday', () => {
     const result = isHoliday(dateWithTime, holidays);
     expect(result).not.toBeNull();
     expect(result.name).toBe('Den obnovy samostatného českého státu');
+  });
+});
+
+describe('fetchAvailableCountries', () => {
+  it('is an async function that returns an array', async () => {
+    const result = await fetchAvailableCountries();
+    expect(Array.isArray(result)).toBe(true);
+  });
+});
+
+describe('fetchHolidays', () => {
+  it('defaults to CZ when no country code is given', async () => {
+    const result = await fetchHolidays(2026);
+    expect(result.length).toBeGreaterThan(0);
+    expect(result[0]).toHaveProperty('date');
+    expect(result[0]).toHaveProperty('name');
+  });
+
+  it('accepts a country code parameter', async () => {
+    const result = await fetchHolidays(2026, 'CZ');
+    expect(result.length).toBeGreaterThan(0);
+  });
+});
+
+describe('evictStaleCache', () => {
+  it('is callable without errors', () => {
+    expect(() => evictStaleCache()).not.toThrow();
   });
 });
