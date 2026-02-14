@@ -1,6 +1,6 @@
 # Compact Calendar
 
-A web-based compact calendar inspired by [Sri Seah's Compact Calendar](https://davidseah.com/node/compact-calendar/). Displays an entire year at a glance using ISO 8601 week numbering with two configurable event bands (Committed and Possible) fed from ICS calendar files or URLs.
+A web-based compact calendar inspired by [DSri Seah's Compact Calendar](https://davidseah.com/node/compact-calendar/). Displays an entire year at a glance using ISO 8601 week numbering with two configurable event bands (Committed and Possible) fed from ICS calendar files or URLs.
 
 ## Features
 
@@ -9,6 +9,7 @@ A web-based compact calendar inspired by [Sri Seah's Compact Calendar](https://d
 - Load events from ICS files or webcal/HTTPS URLs (e.g., iCloud published calendars)
 - Built-in demo data to explore the calendar without your own files
 - Country-selectable public holidays via [Nager.Date API](https://date.nager.at/)
+- Share your calendar view via a URL — settings are encoded in the URL fragment and never sent to any server
 - Font size controls and print-friendly layout
 - All data stays in the browser (localStorage for preferences and caching)
 - Server-side CORS proxy for fetching remote ICS URLs
@@ -40,6 +41,7 @@ src/
   ics-parser.js      # ICS file parsing (VEVENT extraction)
   renderer.js        # DOM rendering, color precedence, event placement
   main.js            # App orchestration, UI controls, state management
+  share.js           # URL-hash-based sharing (encode/decode config)
   styles.css         # Layout, colors, print styles
 api/
   src/functions/

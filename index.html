@@ -61,6 +61,10 @@
         <button id="yellow-action" class="action-btn">Fetch</button>
         <span id="yellow-status" class="load-status"></span>
       </div>
+      <div class="upload-group">
+        <button id="share-btn" class="action-btn" hidden>Share</button>
+        <span id="share-status" class="load-status"></span>
+      </div>
       <p class="controls-hint">For each band, choose <strong>URL</strong> to fetch a webcal link, <strong>File</strong> to load from your device, <strong>Demo</strong> to explore with sample data, or <strong>Clear</strong> to remove events.</p>
     </div>
 
@@ -95,6 +99,9 @@
 
         <dt>Printing</dt>
         <dd>All controls and this help section are hidden when you print. Colors are preserved.</dd>
+
+        <dt>Sharing</dt>
+        <dd>When you have URL-based calendars loaded, a <strong>Share</strong> button appears. Click it to copy a link that pre-configures the app with your calendar URLs and country. The link encodes your settings in the URL fragment (<code>#</code>), which never leaves your browser — it is not sent to any server. If you also have a file-based calendar loaded, you&rsquo;ll need to share that file separately.</dd>
       </dl>
 
       <h2>Privacy &amp; data</h2>
@@ -109,7 +116,7 @@
         <dd>Holiday data is fetched from <a href="https://date.nager.at/" target="_blank" rel="noopener">Nager.Date</a>, a free public API. Requests go directly from your browser to their servers. Results are cached in your browser for 30 days to minimize API calls.</dd>
       </dl>
 
-      <p class="help-credits">Calendar layout inspired by <a href="https://davidseah.com/node/compact-calendar/" target="_blank" rel="noopener">Sri Seah's Compact Calendar</a>. <a href="https://github.com/bexelbie/online-compact-calendar/issues" target="_blank" rel="noopener">Feedback &amp; ideas</a>.</p>
+      <p class="help-credits">Calendar layout inspired by <a href="https://davidseah.com/node/compact-calendar/" target="_blank" rel="noopener">DSri Seah's Compact Calendar</a>. Built by <a href="https://www.bexelbie.com" target="_blank" rel="noopener">Brian "bex" Exelbierd</a>. <a href="https://github.com/bexelbie/online-compact-calendar/issues" target="_blank" rel="noopener">Feedback &amp; ideas</a>.</p>
     </div>
 
     <script type="module" src="/src/main.js"></script>

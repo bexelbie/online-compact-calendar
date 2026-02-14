@@ -6,6 +6,7 @@ import { generateYear } from './calendar-grid.js';
 import { fetchHolidays, fetchAvailableCountries, evictStaleCache } from './holidays.js';
 import { parseICS, getEventsForYear } from './ics-parser.js';
 import { renderCalendar } from './renderer.js';
+import { encodeShareHash, decodeShareHash, buildShareStatus } from './share.js';
 
 // Clean up expired cache entries on startup
 evictStaleCache();
@@ -14,6 +15,35 @@ const STORAGE_KEY_GREEN_URL = 'compact-cal-green-url';
 const STORAGE_KEY_YELLOW_URL = 'compact-cal-yellow-url';
 const STORAGE_KEY_COUNTRY = 'compact-cal-country';
 const STORAGE_KEY_WELCOMED = 'compact-cal-welcomed';
+
+// Apply shared config from URL hash if present
+const shareHash = window.location.hash.slice(1);
+if (shareHash) {
+  const shareConfig = decodeShareHash(shareHash);
+  if (shareConfig) {
+    const hasExisting = localStorage.getItem(STORAGE_KEY_GREEN_URL) || localStorage.getItem(STORAGE_KEY_YELLOW_URL);
+    const shouldApply = !hasExisting || window.confirm(
+      'This link will replace your current calendar configuration. Continue?'
+    );
+    if (shouldApply) {
+      if (shareConfig.greenUrl) {
+        localStorage.setItem(STORAGE_KEY_GREEN_URL, shareConfig.greenUrl);
+      } else {
+        localStorage.removeItem(STORAGE_KEY_GREEN_URL);
+      }
+      if (shareConfig.yellowUrl) {
+        localStorage.setItem(STORAGE_KEY_YELLOW_URL, shareConfig.yellowUrl);
+      } else {
+        localStorage.removeItem(STORAGE_KEY_YELLOW_URL);
+      }
+      if (shareConfig.countryCode) {
+        localStorage.setItem(STORAGE_KEY_COUNTRY, shareConfig.countryCode);
+      }
+    }
+    // Clear hash from URL bar so it doesn't persist in bookmarks
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+}
 
 // Show welcome banner for first-time users (hide if they have saved URLs)
 const welcomeBanner = document.getElementById('welcome-banner');
@@ -93,6 +123,7 @@ async function fetchIcsFromUrl(url, color) {
     statusEl.textContent = `${events.length} events`;
     statusEl.className = 'load-status success';
     updateRefreshVisibility();
+    updateShareVisibility();
     loadAndRender();
   } catch (err) {
     console.error(`Failed to fetch ICS: ${err.message}`);
@@ -103,6 +134,7 @@ async function fetchIcsFromUrl(url, color) {
 
 function handleFileUpload(file, color) {
   const statusEl = document.getElementById(`${color}-status`);
+  const storageKey = color === 'green' ? STORAGE_KEY_GREEN_URL : STORAGE_KEY_YELLOW_URL;
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
@@ -112,6 +144,9 @@ function handleFileUpload(file, color) {
       } else {
         state.allYellowEvents = events;
       }
+      localStorage.removeItem(storageKey);
+      updateRefreshVisibility();
+      updateShareVisibility();
       statusEl.textContent = `${events.length} events`;
       statusEl.className = 'load-status success';
       loadAndRender();
@@ -154,7 +189,42 @@ refreshBtn.addEventListener('click', async () => {
 
 updateRefreshVisibility();
 
-// Font size controls
+// Share button — generates a shareable URL from current config
+const shareBtn = document.getElementById('share-btn');
+const shareStatusEl = document.getElementById('share-status');
+
+function updateShareVisibility() {
+  const hasUrls = localStorage.getItem(STORAGE_KEY_GREEN_URL) || localStorage.getItem(STORAGE_KEY_YELLOW_URL);
+  shareBtn.hidden = !hasUrls;
+  if (!hasUrls) shareStatusEl.textContent = '';
+}
+
+shareBtn.addEventListener('click', async () => {
+  const greenUrl = localStorage.getItem(STORAGE_KEY_GREEN_URL);
+  const yellowUrl = localStorage.getItem(STORAGE_KEY_YELLOW_URL);
+  const countryCode = localStorage.getItem(STORAGE_KEY_COUNTRY) || '';
+
+  const hash = encodeShareHash({ countryCode, greenUrl, yellowUrl });
+  const shareUrl = `${window.location.origin}${window.location.pathname}#${hash}`;
+
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+  } catch {
+    // Fallback for contexts where clipboard API is unavailable
+    prompt('Copy this link:', shareUrl);
+  }
+
+  const status = buildShareStatus({
+    greenUrl,
+    yellowUrl,
+    greenHasEvents: state.allGreenEvents.length > 0,
+    yellowHasEvents: state.allYellowEvents.length > 0,
+  });
+  shareStatusEl.textContent = status;
+  shareStatusEl.className = 'load-status success';
+});
+
+updateShareVisibility();
 const fontSizeDisplay = document.getElementById('font-size-display');
 let fontSize = parseInt(getComputedStyle(document.body).fontSize, 10);
 fontSizeDisplay.textContent = `${fontSize}px`;
@@ -210,6 +280,9 @@ function setupBand(color) {
           } else {
             state.allYellowEvents = events;
           }
+          localStorage.removeItem(storageKey);
+          updateRefreshVisibility();
+          updateShareVisibility();
           statusEl.textContent = `${events.length} demo events`;
           statusEl.className = 'load-status success';
           loadAndRender();
@@ -232,6 +305,7 @@ function setupBand(color) {
       modeSelect.value = 'url';
       applyMode('url');
       updateRefreshVisibility();
+      updateShareVisibility();
       // Show welcome banner again if both bands are empty
       if (state.allGreenEvents.length === 0 && state.allYellowEvents.length === 0) {
         localStorage.removeItem(STORAGE_KEY_WELCOMED);
