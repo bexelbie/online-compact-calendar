@@ -8,10 +8,10 @@
   <body>
     <div id="welcome-banner" class="welcome-banner no-print">
       <button id="welcome-dismiss" class="welcome-dismiss" title="Dismiss">&times;</button>
-      <span>Set up your calendar below &mdash; pick a country for holidays, then load your events via URL, file, or demo data using the dropdowns.</span>
+      <span>Click <strong>&#x2699;</strong> in the header bar to configure your calendar &mdash; pick a country for holidays, then load your events via URL, file, or demo data.</span>
     </div>
 
-    <div class="calendar-wrapper">
+    <div id="calendar-top" class="calendar-wrapper">
       <div class="calendar-header no-print">
         <div class="year-nav">
           <button id="year-prev">&lt;</button>
@@ -19,70 +19,81 @@
           <button id="year-next">&gt;</button>
           <button id="refresh-btn" class="refresh-btn" title="Refresh calendar URLs" hidden>&#x21bb;</button>
         </div>
-        <div class="font-controls">
-          <button id="font-down">A&minus;</button>
-          <span id="font-size-display"></span>
-          <button id="font-up">A+</button>
+        <div class="header-right">
+          <button id="settings-btn" class="settings-btn" title="Settings">&#x2699;</button>
+          <a id="help-link" class="help-link" href="#help" title="Help">?</a>
+          <div class="font-controls">
+            <button id="font-down">A&minus;</button>
+            <span id="font-size-display"></span>
+            <button id="font-up">A+</button>
+          </div>
         </div>
+      </div>
+      <div id="settings-panel" class="settings-panel no-print" hidden>
+        <div class="settings-panel-header">
+          <span class="settings-panel-title">Settings</span>
+          <button id="settings-close" class="settings-close" title="Close">&times;</button>
+        </div>
+        <div class="upload-group">
+          <label>Holidays:</label>
+          <select id="country-select" class="mode-select"></select>
+          <span id="country-status" class="load-status"></span>
+        </div>
+        <div class="upload-group">
+          <label><input type="checkbox" id="include-single-day" /> Include single-day all-day events</label>
+          <label><input type="checkbox" id="include-recurring" /> Include recurring all-day events</label>
+        </div>
+        <div class="upload-group">
+          <span class="color-dot green"></span>
+          <label>Committed:</label>
+          <select id="green-mode" class="mode-select">
+            <option value="url">URL</option>
+            <option value="file">File</option>
+            <option value="demo">Demo</option>
+            <option value="clear">Clear</option>
+          </select>
+          <input type="text" id="green-url" placeholder="webcal:// or https://" class="url-input" />
+          <input type="file" id="green-ics" accept=".ics,.ical" class="file-input" hidden />
+          <button id="green-action" class="action-btn">Fetch</button>
+          <span id="green-status" class="load-status"></span>
+        </div>
+        <div class="upload-group">
+          <span class="color-dot yellow"></span>
+          <label>Possible:</label>
+          <select id="yellow-mode" class="mode-select">
+            <option value="url">URL</option>
+            <option value="file">File</option>
+            <option value="demo">Demo</option>
+            <option value="clear">Clear</option>
+          </select>
+          <input type="text" id="yellow-url" placeholder="webcal:// or https://" class="url-input" />
+          <input type="file" id="yellow-ics" accept=".ics,.ical" class="file-input" hidden />
+          <button id="yellow-action" class="action-btn">Fetch</button>
+          <span id="yellow-status" class="load-status"></span>
+        </div>
+        <div class="upload-group">
+          <button id="share-btn" class="action-btn" hidden>Share</button>
+          <span id="share-status" class="load-status"></span>
+        </div>
+        <p class="controls-hint">For each band, choose <strong>URL</strong> to fetch a webcal link, <strong>File</strong> to load from your device, <strong>Demo</strong> to explore with sample data, or <strong>Clear</strong> to remove events.</p>
       </div>
       <div id="calendar-container"></div>
     </div>
-    <div class="upload-controls no-print">
-      <div class="upload-group">
-        <label>Holidays:</label>
-        <select id="country-select" class="mode-select"></select>
-        <span id="country-status" class="load-status"></span>
-      </div>
-      <div class="upload-group">
-        <label><input type="checkbox" id="include-single-day" /> Include single-day all-day events</label>
-        <label><input type="checkbox" id="include-recurring" /> Include recurring all-day events</label>
-      </div>
-      <div class="upload-group">
-        <span class="color-dot green"></span>
-        <label>Committed:</label>
-        <select id="green-mode" class="mode-select">
-          <option value="url">URL</option>
-          <option value="file">File</option>
-          <option value="demo">Demo</option>
-          <option value="clear">Clear</option>
-        </select>
-        <input type="text" id="green-url" placeholder="webcal:// or https://" class="url-input" />
-        <input type="file" id="green-ics" accept=".ics,.ical" class="file-input" hidden />
-        <button id="green-action" class="action-btn">Fetch</button>
-        <span id="green-status" class="load-status"></span>
-      </div>
-      <div class="upload-group">
-        <span class="color-dot yellow"></span>
-        <label>Possible:</label>
-        <select id="yellow-mode" class="mode-select">
-          <option value="url">URL</option>
-          <option value="file">File</option>
-          <option value="demo">Demo</option>
-          <option value="clear">Clear</option>
-        </select>
-        <input type="text" id="yellow-url" placeholder="webcal:// or https://" class="url-input" />
-        <input type="file" id="yellow-ics" accept=".ics,.ical" class="file-input" hidden />
-        <button id="yellow-action" class="action-btn">Fetch</button>
-        <span id="yellow-status" class="load-status"></span>
-      </div>
-      <div class="upload-group">
-        <button id="share-btn" class="action-btn" hidden>Share</button>
-        <span id="share-status" class="load-status"></span>
-      </div>
-      <p class="controls-hint">For each band, choose <strong>URL</strong> to fetch a webcal link, <strong>File</strong> to load from your device, <strong>Demo</strong> to explore with sample data, or <strong>Clear</strong> to remove events.</p>
-    </div>
 
-    <div class="help-section no-print">
+    <div id="help" class="help-section no-print">
       <h2>How to use</h2>
       <dl>
+        <dt>Settings</dt>
+        <dd>Click <strong>&#x2699;</strong> in the header bar to open the settings panel. All configuration &mdash; holidays, event sources, filters, and sharing &mdash; lives here. Close it by clicking <strong>&times;</strong>, pressing <strong>Escape</strong>, or clicking outside the panel.</dd>
+
         <dt>Year navigation</dt>
         <dd>Use the <strong>&lt;</strong> and <strong>&gt;</strong> buttons in the header bar to move between years.</dd>
 
         <dt>Holidays</dt>
-        <dd>Choose your country from the <strong>Holidays</strong> dropdown. The selection is saved and holiday data is cached locally for 30 days.</dd>
+        <dd>In settings, choose your country from the <strong>Holidays</strong> dropdown. The selection is saved and holiday data is cached locally for 30 days.</dd>
 
         <dt>Events</dt>
-        <dd>Each event band has a dropdown with four options:
+        <dd>In settings, each event band has a dropdown with four options:
           <strong>URL</strong> &mdash; enter a webcal:// or https:// calendar link and click Fetch;
           <strong>File</strong> &mdash; upload a .ics file from your computer;
           <strong>Demo</strong> &mdash; load sample data to see how the calendar looks;
@@ -90,8 +101,13 @@
           <strong>Committed</strong> (green) is for confirmed events; <strong>Possible</strong> (yellow) is for tentative ones.
           URLs are saved and automatically reloaded on your next visit.</dd>
 
+        <dt>Event filtering</dt>
+        <dd>The calendar is designed for multi-day all-day events (trips, conferences, vacations). If you load a shared calendar that also contains appointments and single-day events, those are filtered out by default. Two checkboxes in settings control what appears:
+          <strong>Include single-day all-day events</strong> &mdash; shows events like birthdays and holidays that span exactly one day;
+          <strong>Include recurring all-day events</strong> &mdash; expands recurring events (e.g., weekly team days) to show all occurrences. The first occurrence of any recurring event always appears regardless of this setting.</dd>
+
         <dt>Reading the calendar</dt>
-        <dd>Each row is one ISO week (Mon–Sun). <span style="color:#cc0000">Red text</span> = public holiday.
+        <dd>Each row is one ISO week (Mon&ndash;Sun). <span style="color:#cc0000">Red text</span> = public holiday.
           <span style="background:#dde3f0; padding:0 3px">Blue background</span> = first of the month.
           <span style="background:#b6d7a8; padding:0 3px">Green</span> = committed event.
           <span style="background:#ffe599; padding:0 3px">Yellow</span> = possible event.
@@ -99,13 +115,13 @@
           <span style="color:#c62828; font-weight:bold">Bold red text in the Possible column</span> = date conflicts with a committed event.</dd>
 
         <dt>Font size</dt>
-        <dd>Use <strong>A−</strong> / <strong>A+</strong> in the header bar. Range: 10–24px.</dd>
+        <dd>Use <strong>A&minus;</strong> / <strong>A+</strong> in the header bar. Range: 10&ndash;24px.</dd>
 
         <dt>Printing</dt>
         <dd>All controls and this help section are hidden when you print. Colors are preserved.</dd>
 
         <dt>Sharing</dt>
-        <dd>When you have URL-based calendars loaded, a <strong>Share</strong> button appears. Click it to copy a link that pre-configures the app with your calendar URLs and country. The link encodes your settings in the URL fragment (<code>#</code>), which never leaves your browser — it is not sent to any server. If you also have a file-based calendar loaded, you&rsquo;ll need to share that file separately.</dd>
+        <dd>When you have URL-based calendars loaded, a <strong>Share</strong> button appears in settings. Click it to copy a link that pre-configures the app with your calendar URLs and country. The link encodes your settings in the URL fragment (<code>#</code>), which never leaves your browser &mdash; it is not sent to any server. If you also have a file-based calendar loaded, you&rsquo;ll need to share that file separately.</dd>
       </dl>
 
       <h2>Privacy &amp; data</h2>
@@ -121,6 +137,7 @@
       </dl>
 
       <p class="help-credits">Calendar layout inspired by <a href="https://davidseah.com/node/compact-calendar/" target="_blank" rel="noopener">DSri Seah's Compact Calendar</a>. Built by <a href="https://www.bexelbie.com" target="_blank" rel="noopener">Brian "bex" Exelbierd</a>. <a href="https://github.com/bexelbie/online-compact-calendar/issues" target="_blank" rel="noopener">Feedback &amp; ideas</a>.</p>
+      <p><a href="#calendar-top" class="back-to-calendar">&uarr; Back to calendar</a></p>
     </div>
 
     <script type="module" src="/src/main.js"></script>

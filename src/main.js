@@ -4,7 +4,7 @@
 import './styles.css';
 import { generateYear } from './calendar-grid.js';
 import { fetchHolidays, fetchAvailableCountries, evictStaleCache } from './holidays.js';
-import { parseICS, expandRecurring, filterEvents, getEventsForYear } from './ics-parser.js';
+import { parseICS, expandRecurring, filterEvents, getEventsForYear, replaceDemoYearSlugs } from './ics-parser.js';
 import { renderCalendar } from './renderer.js';
 import { encodeShareHash, decodeShareHash, buildShareStatus } from './share.js';
 
@@ -82,6 +82,30 @@ const state = {
 
 const calendarContainer = document.getElementById('calendar-container');
 const yearDisplay = document.getElementById('year-display');
+
+// Settings panel toggle
+const settingsPanel = document.getElementById('settings-panel');
+const settingsBtn = document.getElementById('settings-btn');
+const settingsClose = document.getElementById('settings-close');
+
+function toggleSettings() {
+  settingsPanel.hidden = !settingsPanel.hidden;
+}
+
+settingsBtn.addEventListener('click', toggleSettings);
+settingsClose.addEventListener('click', () => { settingsPanel.hidden = true; });
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !settingsPanel.hidden) {
+    settingsPanel.hidden = true;
+  }
+});
+
+document.addEventListener('click', (e) => {
+  if (!settingsPanel.hidden && !settingsPanel.contains(e.target) && e.target !== settingsBtn) {
+    settingsPanel.hidden = true;
+  }
+});
 
 async function loadAndRender() {
   yearDisplay.textContent = state.year;
@@ -293,7 +317,8 @@ function setupBand(color) {
       fetch(sampleFile)
         .then(resp => resp.text())
         .then(icsText => {
-          const events = parseICS(icsText);
+          const resolvedText = replaceDemoYearSlugs(icsText, new Date().getFullYear());
+          const events = parseICS(resolvedText);
           if (color === 'green') {
             state.allGreenEvents = events;
           } else {

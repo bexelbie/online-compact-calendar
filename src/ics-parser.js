@@ -1,5 +1,5 @@
 // ABOUTME: Parses ICS (iCalendar) files into event objects for the compact calendar.
-// ABOUTME: Exports parseICS, expandRecurring, filterEvents, getEventsForYear, and isDateInEvent functions.
+// ABOUTME: Exports parseICS, expandRecurring, filterEvents, getEventsForYear, isDateInEvent, and replaceDemoYearSlugs.
 import ICAL from 'ical.js';
 
 function stripTime(date) {
@@ -101,4 +101,11 @@ export function isDateInEvent(date, event) {
   const start = stripTime(event.startDate);
   const end = stripTime(event.endDate);
   return d >= start && d <= end;
+}
+
+export function replaceDemoYearSlugs(icsText, year) {
+  return icsText
+    .replaceAll('{YEAR-1}', String(year - 1))
+    .replaceAll('{YEAR+1}', String(year + 1))
+    .replaceAll('{YEAR}', String(year));
 }

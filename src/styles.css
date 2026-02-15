@@ -88,14 +88,21 @@ body {
   color: #666;
 }
 
-/* --- Upload controls --- */
-.upload-controls {
-  margin-top: 16px;
-  margin-bottom: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+.back-to-calendar {
+  font-size: 12px;
+  color: #666;
+  text-decoration: none;
+  padding: 3px 10px;
+  border: 1px solid #999;
+  border-radius: 3px;
+  background: #f5f5f5;
 }
+
+.back-to-calendar:hover {
+  background: #e0e0e0;
+}
+
+/* --- Upload/settings controls --- */
 
 .controls-hint {
   margin: 4px 0 0 0;
@@ -176,9 +183,10 @@ body {
 /* --- Calendar wrapper: shrink-wraps header bar to table width --- */
 .calendar-wrapper {
   display: inline-block;
+  position: relative;
 }
 
-/* --- Calendar header: year nav left, font controls right --- */
+/* --- Calendar header: year nav left, settings + font controls right --- */
 .calendar-header {
   display: flex;
   align-items: center;
@@ -188,6 +196,90 @@ body {
   padding: 4px 8px;
   margin-bottom: 0;
   font-weight: bold;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-btn {
+  font-size: 16px;
+  padding: 1px 6px;
+  cursor: pointer;
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 3px;
+  font-family: inherit;
+}
+
+.settings-btn:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+.help-link {
+  font-size: 14px;
+  padding: 1px 7px;
+  cursor: pointer;
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 3px;
+  font-family: inherit;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.help-link:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+/* --- Settings panel overlay --- */
+.settings-panel {
+  position: absolute;
+  z-index: 100;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-top: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 50em;
+}
+
+.settings-panel[hidden] {
+  display: none;
+}
+
+.settings-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.settings-panel-title {
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.settings-close {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  color: #666;
+  padding: 2px 6px;
+}
+
+.settings-close:hover {
+  background: #eee;
 }
 
 .year-nav {

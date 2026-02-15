@@ -1,7 +1,7 @@
 // ABOUTME: Tests for the ICS parser module.
-// ABOUTME: Covers parseICS, getEventsForYear, isDateInEvent, filterEvents, and expandRecurring functions.
+// ABOUTME: Covers parseICS, getEventsForYear, isDateInEvent, filterEvents, expandRecurring, and replaceDemoYearSlugs.
 import { describe, it, expect } from 'vitest';
-import { parseICS, getEventsForYear, isDateInEvent, filterEvents, expandRecurring } from '../src/ics-parser.js';
+import { parseICS, getEventsForYear, isDateInEvent, filterEvents, expandRecurring, replaceDemoYearSlugs } from '../src/ics-parser.js';
 
 const TIMED_EVENT_ICS = `BEGIN:VCALENDAR
 VERSION:2.0
@@ -386,5 +386,53 @@ describe('expandRecurring', () => {
     const events = parseICS(WEEKLY_RECURRING_ICS);
     const expanded = expandRecurring(events, new Date(2026, 0, 1), new Date(2026, 11, 31), { includeRecurring: false });
     expect(expanded[0].isAllDay).toBe(true);
+  });
+});
+
+describe('replaceDemoYearSlugs', () => {
+  it('replaces {YEAR} with the given year', () => {
+    const input = 'DTSTART;VALUE=DATE:{YEAR}0309';
+    expect(replaceDemoYearSlugs(input, 2026)).toBe('DTSTART;VALUE=DATE:20260309');
+  });
+
+  it('replaces {YEAR-1} with the previous year', () => {
+    const input = 'DTSTART;VALUE=DATE:{YEAR-1}1222';
+    expect(replaceDemoYearSlugs(input, 2026)).toBe('DTSTART;VALUE=DATE:20251222');
+  });
+
+  it('replaces {YEAR+1} with the next year', () => {
+    const input = 'DTEND;VALUE=DATE:{YEAR+1}0103';
+    expect(replaceDemoYearSlugs(input, 2026)).toBe('DTEND;VALUE=DATE:20270103');
+  });
+
+  it('handles multiple slugs in the same text', () => {
+    const input = `DTSTART;VALUE=DATE:{YEAR-1}1222
+DTEND;VALUE=DATE:{YEAR}0103
+SUMMARY:Holiday Break`;
+    const result = replaceDemoYearSlugs(input, 2027);
+    expect(result).toContain('20261222');
+    expect(result).toContain('20270103');
+  });
+
+  it('leaves text without slugs unchanged', () => {
+    const input = 'DTSTART;VALUE=DATE:20260309';
+    expect(replaceDemoYearSlugs(input, 2026)).toBe(input);
+  });
+
+  it('produces parseable ICS when applied to a demo file', () => {
+    const demoIcs = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Test//Test//EN
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:{YEAR}0714
+DTEND;VALUE=DATE:{YEAR}0718
+SUMMARY:Vacation
+END:VEVENT
+END:VCALENDAR`;
+    const resolved = replaceDemoYearSlugs(demoIcs, 2028);
+    const events = parseICS(resolved);
+    expect(events).toHaveLength(1);
+    expect(events[0].startDate.getFullYear()).toBe(2028);
+    expect(events[0].startDate.getMonth()).toBe(6);
   });
 });
