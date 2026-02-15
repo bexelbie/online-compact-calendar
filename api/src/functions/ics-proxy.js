@@ -4,11 +4,18 @@
 const { app } = require('@azure/functions');
 
 app.http('ics-proxy', {
-  methods: ['GET'],
+  methods: ['POST'],
   authLevel: 'anonymous',
   route: 'ics-proxy',
   handler: async (request, context) => {
-    const url = request.query.get('url');
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return { status: 400, body: 'Invalid JSON body' };
+    }
+
+    const url = body.url;
 
     if (!url) {
       return { status: 400, body: 'Missing url parameter' };
@@ -51,8 +58,8 @@ app.http('ics-proxy', {
         body,
       };
     } catch (err) {
-      context.error(`Proxy fetch failed: ${err.message}`);
-      return { status: 502, body: `Failed to fetch: ${err.message}` };
+      context.error(`Proxy fetch failed for ${parsed.hostname}: ${err.message}`);
+      return { status: 502, body: 'Failed to fetch calendar' };
     }
   },
 });

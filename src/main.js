@@ -142,8 +142,11 @@ async function fetchIcsFromUrl(url, color) {
 
   try {
     const httpsUrl = normalizeIcsUrl(url);
-    const proxyUrl = `/api/ics-proxy?url=${encodeURIComponent(httpsUrl)}`;
-    const response = await fetch(proxyUrl);
+    const response = await fetch('/api/ics-proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: httpsUrl }),
+    });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }

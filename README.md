@@ -19,7 +19,7 @@ A web-based compact calendar inspired by [DSri Seah's Compact Calendar](https://
 - **Frontend**: Vanilla JavaScript, built with [Vite](https://vite.dev/)
 - **API**: Azure Function (Node.js) providing a CORS proxy at `/api/ics-proxy`
 - **Hosting**: Azure Static Web Apps
-- **Tests**: [Vitest](https://vitest.dev/) — 30 tests across calendar grid, holidays, and ICS parsing
+- **Tests**: [Vitest](https://vitest.dev/)
 
 ## Development
 
@@ -51,13 +51,60 @@ public/
   yellow-sample.ics         # Demo data: Possible events
   staticwebapp.config.json  # Azure SWA routing and auth config
 test/                # Vitest test suites
-test-data/           # Sample ICS files for testing
 index.html           # Single-page app entry point
 ```
 
 ## Deployment
 
-Hosted on Azure Static Web Apps with GitHub Actions CI/CD. Pushes to `main` trigger automatic builds and deployments.
+Hosted on Azure Static Web Apps with GitHub Actions CI/CD. Pushes to `main` trigger automatic builds and deployments. The site is available at [cc.bexelbie.com](https://cc.bexelbie.com).
+
+### Infrastructure Setup
+
+The Azure infrastructure was created with the Azure CLI. To recreate from scratch:
+
+```bash
+# Create resource group
+az group create \
+  --name rg-compact-calendar \
+  --location westeurope
+
+# Create Static Web App (free tier)
+az staticwebapp create \
+  --name compact-calendar \
+  --resource-group rg-compact-calendar \
+  --location westeurope
+
+# Get the deployment token (store as AZURE_STATIC_WEB_APPS_API_TOKEN secret in GitHub)
+az staticwebapp secrets list \
+  --name compact-calendar \
+  --resource-group rg-compact-calendar \
+  --query "properties.apiKey" -o tsv
+
+# Configure custom domain
+az staticwebapp hostname set \
+  --name compact-calendar \
+  --resource-group rg-compact-calendar \
+  --hostname cc.bexelbie.com
+```
+
+The custom domain requires a CNAME record pointing `cc.bexelbie.com` to the Static Web App's default hostname:
+
+```bash
+az staticwebapp show \
+  --name compact-calendar \
+  --resource-group rg-compact-calendar \
+  --query "defaultHostname" -o tsv
+```
+
+The GitHub Actions workflow (`.github/workflows/deploy.yml`) uses the `AZURE_STATIC_WEB_APPS_API_TOKEN` secret to authenticate deployments.
+
+## Privacy
+
+All preferences (country, calendar URLs, filter settings) are stored in your browser's localStorage. Nothing is sent to third parties or used for tracking.
+
+Calendar URLs necessarily go through the server-side proxy because browsers won't fetch them directly (CORS). The proxy is a stateless pass-through — it does not persist calendar data, in the function or in your browser. Calendar URLs are sent via POST request body rather than query parameters so they are not captured in platform-level request logs. Error logging includes only the target hostname, never the full URL or authentication tokens. If your calendar URL contains authentication tokens (iCloud URLs do), understand that the proxy briefly sees them in transit.
+
+Holiday data is fetched directly from [Nager.Date](https://date.nager.at/) and cached in your browser for 30 days.
 
 ## License
 
