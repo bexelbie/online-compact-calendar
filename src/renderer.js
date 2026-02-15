@@ -1,5 +1,5 @@
 // ABOUTME: Renders the compact calendar as an HTML table in the DOM.
-// ABOUTME: Exports renderCalendar() which builds the full calendar structure from pre-parsed data.
+// ABOUTME: Exports renderCalendar() and pure logic functions for event placement and conflict detection.
 
 function dateKey(y, m, d) {
   return `${y}-${m}-${d}`;
@@ -25,7 +25,7 @@ function localDateNum(localDate) {
   return dateNum(localDate.getFullYear(), localDate.getMonth(), localDate.getDate());
 }
 
-function formatEventDate(date) {
+export function formatEventDate(date) {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   return `${date.getDate()}-${months[date.getMonth()]}`;
 }
@@ -72,7 +72,7 @@ function eventStartsInWeek(event, weekMondayNum, weekSundayNum) {
  * When multiple events start in the same week, only the first gets the home row.
  * Extras spill to the nearest empty row (prefer downward, then upward).
  */
-function computeEventPlacements(events, weeks) {
+export function computeEventPlacements(events, weeks) {
   const totalRows = weeks.length;
   // placements[i] = { event, ongoing } or null
   const placements = new Array(totalRows).fill(null);
@@ -159,7 +159,7 @@ function eventsOverlap(eventA, eventB) {
   return aStart <= bEnd && bStart <= aEnd;
 }
 
-function detectConflicts(yellowEvents, greenEvents) {
+export function detectConflicts(yellowEvents, greenEvents) {
   const conflicts = new Set();
   for (const yellow of yellowEvents) {
     for (const green of greenEvents) {

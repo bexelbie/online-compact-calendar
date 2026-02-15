@@ -1,7 +1,7 @@
 // ABOUTME: Tests for the ICS parser module.
-// ABOUTME: Covers parseICS, getEventsForYear, isDateInEvent, filterEvents, expandRecurring, and replaceDemoYearSlugs.
+// ABOUTME: Covers parseICS, getEventsForYear, isDateInEvent, filterEvents, expandRecurring, replaceDemoYearSlugs, and normalizeIcsUrl.
 import { describe, it, expect } from 'vitest';
-import { parseICS, getEventsForYear, isDateInEvent, filterEvents, expandRecurring, replaceDemoYearSlugs } from '../src/ics-parser.js';
+import { parseICS, getEventsForYear, isDateInEvent, filterEvents, expandRecurring, replaceDemoYearSlugs, normalizeIcsUrl } from '../src/ics-parser.js';
 
 const TIMED_EVENT_ICS = `BEGIN:VCALENDAR
 VERSION:2.0
@@ -434,5 +434,32 @@ END:VCALENDAR`;
     expect(events).toHaveLength(1);
     expect(events[0].startDate.getFullYear()).toBe(2028);
     expect(events[0].startDate.getMonth()).toBe(6);
+  });
+});
+
+describe('normalizeIcsUrl', () => {
+  it('converts webcal:// to https://', () => {
+    expect(normalizeIcsUrl('webcal://example.com/cal.ics'))
+      .toBe('https://example.com/cal.ics');
+  });
+
+  it('leaves https:// URLs unchanged', () => {
+    expect(normalizeIcsUrl('https://example.com/cal.ics'))
+      .toBe('https://example.com/cal.ics');
+  });
+
+  it('trims whitespace', () => {
+    expect(normalizeIcsUrl('  https://example.com/cal.ics  '))
+      .toBe('https://example.com/cal.ics');
+  });
+
+  it('handles webcal with whitespace', () => {
+    expect(normalizeIcsUrl('  webcal://example.com/cal.ics  '))
+      .toBe('https://example.com/cal.ics');
+  });
+
+  it('preserves URL path and query parameters', () => {
+    expect(normalizeIcsUrl('webcal://p123-caldav.icloud.com/published/2/abc?token=xyz'))
+      .toBe('https://p123-caldav.icloud.com/published/2/abc?token=xyz');
   });
 });

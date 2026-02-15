@@ -4,7 +4,7 @@
 import './styles.css';
 import { generateYear } from './calendar-grid.js';
 import { fetchHolidays, fetchAvailableCountries, evictStaleCache } from './holidays.js';
-import { parseICS, expandRecurring, filterEvents, getEventsForYear, replaceDemoYearSlugs } from './ics-parser.js';
+import { parseICS, expandRecurring, filterEvents, getEventsForYear, replaceDemoYearSlugs, normalizeIcsUrl } from './ics-parser.js';
 import { renderCalendar } from './renderer.js';
 import { encodeShareHash, decodeShareHash, buildShareStatus } from './share.js';
 
@@ -129,10 +129,6 @@ async function loadAndRender() {
     yellowEvents: state.yellowEvents,
     year: state.year,
   });
-}
-
-function normalizeIcsUrl(url) {
-  return url.trim().replace(/^webcal:\/\//, 'https://');
 }
 
 async function fetchIcsFromUrl(url, color) {

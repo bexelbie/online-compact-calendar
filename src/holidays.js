@@ -38,7 +38,8 @@ export function evictStaleCache() {
       const key = localStorage.key(i);
       if (key && key.startsWith(prefix) && key !== 'compact-cal-green-url'
           && key !== 'compact-cal-yellow-url' && key !== 'compact-cal-country'
-          && key !== 'compact-cal-welcomed') {
+          && key !== 'compact-cal-include-single-day'
+          && key !== 'compact-cal-include-recurring') {
         keysToCheck.push(key);
       }
     }
@@ -133,7 +134,7 @@ export async function fetchHolidays(year, countryCode = 'CZ') {
 /**
  * Calculate Easter Sunday for a given year using the Anonymous Gregorian algorithm.
  */
-function computeEasterSunday(year) {
+export function computeEasterSunday(year) {
   const a = year % 19;
   const b = Math.floor(year / 100);
   const c = year % 100;

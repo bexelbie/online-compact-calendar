@@ -1,5 +1,5 @@
 // ABOUTME: Parses ICS (iCalendar) files into event objects for the compact calendar.
-// ABOUTME: Exports parseICS, expandRecurring, filterEvents, getEventsForYear, isDateInEvent, and replaceDemoYearSlugs.
+// ABOUTME: Exports parseICS, expandRecurring, filterEvents, getEventsForYear, isDateInEvent, replaceDemoYearSlugs, and normalizeIcsUrl.
 import ICAL from 'ical.js';
 
 function stripTime(date) {
@@ -108,4 +108,8 @@ export function replaceDemoYearSlugs(icsText, year) {
     .replaceAll('{YEAR-1}', String(year - 1))
     .replaceAll('{YEAR+1}', String(year + 1))
     .replaceAll('{YEAR}', String(year));
+}
+
+export function normalizeIcsUrl(url) {
+  return url.trim().replace(/^webcal:\/\//, 'https://');
 }

@@ -2,7 +2,7 @@
 // ABOUTME: Covers static holiday generation, Easter computation, date matching, and API exports.
 
 import { describe, it, expect } from 'vitest';
-import { getStaticHolidays, isHoliday, fetchAvailableCountries, fetchHolidays, evictStaleCache } from '../src/holidays.js';
+import { getStaticHolidays, isHoliday, fetchAvailableCountries, fetchHolidays, evictStaleCache, computeEasterSunday } from '../src/holidays.js';
 
 describe('getStaticHolidays', () => {
   it('returns 13 holidays for 2026', () => {
@@ -62,6 +62,32 @@ describe('getStaticHolidays', () => {
       expect(typeof h.name).toBe('string');
     }
   });
+});
+
+// Known Easter Sunday dates from astronomical/liturgical records
+describe('computeEasterSunday', () => {
+  const knownDates = [
+    [2020, 3, 12],  // April 12
+    [2021, 3, 4],   // April 4
+    [2022, 3, 17],  // April 17
+    [2023, 3, 9],   // April 9
+    [2024, 2, 31],  // March 31
+    [2025, 3, 20],  // April 20
+    [2026, 3, 5],   // April 5
+    [2027, 2, 28],  // March 28
+    [2028, 3, 16],  // April 16
+    [2029, 3, 1],   // April 1
+    [2030, 3, 21],  // April 21
+  ];
+
+  for (const [year, month, day] of knownDates) {
+    it(`computes Easter ${year} correctly`, () => {
+      const easter = computeEasterSunday(year);
+      expect(easter.getFullYear()).toBe(year);
+      expect(easter.getMonth()).toBe(month);
+      expect(easter.getDate()).toBe(day);
+    });
+  }
 });
 
 describe('isHoliday', () => {
