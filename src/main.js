@@ -340,6 +340,7 @@ function setupBand(color) {
           localStorage.removeItem(storageKey);
           updateRefreshVisibility();
           updateShareVisibility();
+          updateBannerVisibility();
           statusEl.textContent = `${events.length} demo events`;
           statusEl.className = 'load-status success';
           loadAndRender();
@@ -347,6 +348,7 @@ function setupBand(color) {
         .catch(err => {
           statusEl.textContent = `Error: ${err.message}`;
           statusEl.className = 'load-status error';
+          updateBannerVisibility();
         });
     } else if (mode === 'clear') {
       if (color === 'green') {
