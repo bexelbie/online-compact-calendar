@@ -1,5 +1,5 @@
 // ABOUTME: Parses ICS (iCalendar) files into event objects for the compact calendar.
-// ABOUTME: Exports parseICS, getEventsForYear, and isDateInEvent functions.
+// ABOUTME: Exports parseICS, expandRecurring, filterEvents, getEventsForYear, and isDateInEvent functions.
 import ICAL from 'ical.js';
 
 function stripTime(date) {
@@ -16,6 +16,7 @@ export function parseICS(icsString) {
     const summary = event.summary || '';
     const dtstart = vevent.getFirstPropertyValue('dtstart');
     const dtend = vevent.getFirstPropertyValue('dtend');
+    const isAllDay = dtstart.isDate;
 
     const startDate = dtstart.toJSDate();
 
@@ -24,13 +25,63 @@ export function parseICS(icsString) {
       endDate = new Date(startDate);
     } else {
       endDate = dtend.toJSDate();
-      const isAllDay = dtstart.isDate;
       if (isAllDay) {
         endDate.setDate(endDate.getDate() - 1);
       }
     }
 
-    return { summary, startDate, endDate };
+    const result = { summary, startDate, endDate, isAllDay };
+    if (event.isRecurring()) {
+      result._icalEvent = event;
+    }
+    return result;
+  });
+}
+
+export function expandRecurring(events, rangeStart, rangeEnd, { includeRecurring = true } = {}) {
+  const rangeEndIcal = ICAL.Time.fromJSDate(rangeEnd);
+  const result = [];
+
+  for (const event of events) {
+    if (!event._icalEvent) {
+      result.push(event);
+      continue;
+    }
+
+    const icalEvent = event._icalEvent;
+    const durationMs = event.endDate - event.startDate;
+    const iter = icalEvent.iterator();
+    let isFirst = true;
+    let next;
+    while ((next = iter.next())) {
+      if (next.compare(rangeEndIcal) > 0) break;
+      const occStart = next.toJSDate();
+      if (occStart < rangeStart) {
+        isFirst = false;
+        continue;
+      }
+      if (!isFirst && !includeRecurring) break;
+      const occEnd = new Date(occStart.getTime() + durationMs);
+      result.push({
+        summary: event.summary,
+        startDate: occStart,
+        endDate: occEnd,
+        isAllDay: event.isAllDay,
+      });
+      isFirst = false;
+    }
+  }
+
+  return result;
+}
+
+export function filterEvents(events, { includeSingleDay = false } = {}) {
+  return events.filter((event) => {
+    if (!event.isAllDay) return false;
+    if (includeSingleDay) return true;
+    const start = stripTime(event.startDate);
+    const end = stripTime(event.endDate);
+    return end > start;
   });
 }
 

@@ -4,7 +4,7 @@
 import './styles.css';
 import { generateYear } from './calendar-grid.js';
 import { fetchHolidays, fetchAvailableCountries, evictStaleCache } from './holidays.js';
-import { parseICS, getEventsForYear } from './ics-parser.js';
+import { parseICS, expandRecurring, filterEvents, getEventsForYear } from './ics-parser.js';
 import { renderCalendar } from './renderer.js';
 import { encodeShareHash, decodeShareHash, buildShareStatus } from './share.js';
 
@@ -14,7 +14,8 @@ evictStaleCache();
 const STORAGE_KEY_GREEN_URL = 'compact-cal-green-url';
 const STORAGE_KEY_YELLOW_URL = 'compact-cal-yellow-url';
 const STORAGE_KEY_COUNTRY = 'compact-cal-country';
-const STORAGE_KEY_WELCOMED = 'compact-cal-welcomed';
+const STORAGE_KEY_INCLUDE_SINGLE_DAY = 'compact-cal-include-single-day';
+const STORAGE_KEY_INCLUDE_RECURRING = 'compact-cal-include-recurring';
 
 // Apply shared config from URL hash if present
 const shareHash = window.location.hash.slice(1);
@@ -45,21 +46,33 @@ if (shareHash) {
   }
 }
 
-// Show welcome banner for first-time users (hide if they have saved URLs)
+// Welcome banner — visible when no URL/file data is loaded
 const welcomeBanner = document.getElementById('welcome-banner');
+let bannerDismissedThisSession = false;
+
+function updateBannerVisibility() {
+  const hasData = state.allGreenEvents.length > 0 || state.allYellowEvents.length > 0;
+  if (hasData || bannerDismissedThisSession) {
+    welcomeBanner.classList.remove('visible');
+  } else {
+    welcomeBanner.classList.add('visible');
+  }
+}
+
 const hasSavedUrls = localStorage.getItem(STORAGE_KEY_GREEN_URL) || localStorage.getItem(STORAGE_KEY_YELLOW_URL);
-const wasDismissed = localStorage.getItem(STORAGE_KEY_WELCOMED);
-if (!hasSavedUrls && !wasDismissed) {
+if (!hasSavedUrls) {
   welcomeBanner.classList.add('visible');
 }
 document.getElementById('welcome-dismiss').addEventListener('click', () => {
+  bannerDismissedThisSession = true;
   welcomeBanner.classList.remove('visible');
-  localStorage.setItem(STORAGE_KEY_WELCOMED, '1');
 });
 
 const state = {
   year: new Date().getFullYear(),
   countryCode: localStorage.getItem(STORAGE_KEY_COUNTRY) || 'CZ',
+  includeSingleDay: localStorage.getItem(STORAGE_KEY_INCLUDE_SINGLE_DAY) === 'true',
+  includeRecurring: localStorage.getItem(STORAGE_KEY_INCLUDE_RECURRING) === 'true',
   holidays: [],
   greenEvents: [],
   yellowEvents: [],
@@ -76,8 +89,12 @@ async function loadAndRender() {
 
   state.holidays = await fetchHolidays(state.year, state.countryCode);
 
-  state.greenEvents = getEventsForYear(state.allGreenEvents, state.year);
-  state.yellowEvents = getEventsForYear(state.allYellowEvents, state.year);
+  const rangeStart = new Date(state.year - 1, 0, 1);
+  const rangeEnd = new Date(state.year + 1, 11, 31);
+  const expandOpts = { includeRecurring: state.includeRecurring };
+  const filterOpts = { includeSingleDay: state.includeSingleDay };
+  state.greenEvents = getEventsForYear(filterEvents(expandRecurring(state.allGreenEvents, rangeStart, rangeEnd, expandOpts), filterOpts), state.year);
+  state.yellowEvents = getEventsForYear(filterEvents(expandRecurring(state.allYellowEvents, rangeStart, rangeEnd, expandOpts), filterOpts), state.year);
 
   const weeks = generateYear(state.year);
 
@@ -124,6 +141,7 @@ async function fetchIcsFromUrl(url, color) {
     statusEl.className = 'load-status success';
     updateRefreshVisibility();
     updateShareVisibility();
+    updateBannerVisibility();
     loadAndRender();
   } catch (err) {
     console.error(`Failed to fetch ICS: ${err.message}`);
@@ -147,6 +165,7 @@ function handleFileUpload(file, color) {
       localStorage.removeItem(storageKey);
       updateRefreshVisibility();
       updateShareVisibility();
+      updateBannerVisibility();
       statusEl.textContent = `${events.length} events`;
       statusEl.className = 'load-status success';
       loadAndRender();
@@ -306,11 +325,7 @@ function setupBand(color) {
       applyMode('url');
       updateRefreshVisibility();
       updateShareVisibility();
-      // Show welcome banner again if both bands are empty
-      if (state.allGreenEvents.length === 0 && state.allYellowEvents.length === 0) {
-        localStorage.removeItem(STORAGE_KEY_WELCOMED);
-        welcomeBanner.classList.add('visible');
-      }
+      updateBannerVisibility();
       loadAndRender();
     }
   }
@@ -387,6 +402,26 @@ countrySelect.addEventListener('change', () => {
 });
 
 populateCountryDropdown();
+
+// Single-day event filter checkbox
+const includeSingleDayCheckbox = document.getElementById('include-single-day');
+includeSingleDayCheckbox.checked = state.includeSingleDay;
+
+includeSingleDayCheckbox.addEventListener('change', () => {
+  state.includeSingleDay = includeSingleDayCheckbox.checked;
+  localStorage.setItem(STORAGE_KEY_INCLUDE_SINGLE_DAY, String(state.includeSingleDay));
+  loadAndRender();
+});
+
+// Recurring event filter checkbox
+const includeRecurringCheckbox = document.getElementById('include-recurring');
+includeRecurringCheckbox.checked = state.includeRecurring;
+
+includeRecurringCheckbox.addEventListener('change', () => {
+  state.includeRecurring = includeRecurringCheckbox.checked;
+  localStorage.setItem(STORAGE_KEY_INCLUDE_RECURRING, String(state.includeRecurring));
+  loadAndRender();
+});
 
 // Initial render (holidays + grid even before ICS loads)
 loadAndRender();
