@@ -107,27 +107,41 @@ document.addEventListener('click', (e) => {
   }
 });
 
+let renderGeneration = 0;
+
 async function loadAndRender() {
+  const thisGeneration = ++renderGeneration;
+
   yearDisplay.textContent = state.year;
   document.title = `Compact Calendar ${state.year}`;
 
-  state.holidays = await fetchHolidays(state.year, state.countryCode);
+  const year = state.year;
+  const countryCode = state.countryCode;
+  const includeSingleDay = state.includeSingleDay;
+  const includeRecurring = state.includeRecurring;
 
-  const rangeStart = new Date(state.year - 1, 0, 1);
-  const rangeEnd = new Date(state.year + 1, 11, 31);
-  const expandOpts = { includeRecurring: state.includeRecurring };
-  const filterOpts = { includeSingleDay: state.includeSingleDay };
-  state.greenEvents = getEventsForYear(filterEvents(expandRecurring(state.allGreenEvents, rangeStart, rangeEnd, expandOpts), filterOpts), state.year);
-  state.yellowEvents = getEventsForYear(filterEvents(expandRecurring(state.allYellowEvents, rangeStart, rangeEnd, expandOpts), filterOpts), state.year);
+  const holidays = await fetchHolidays(year, countryCode);
 
-  const weeks = generateYear(state.year);
+  // A newer render was started while we were fetching; discard this one
+  if (thisGeneration !== renderGeneration) return;
+
+  state.holidays = holidays;
+
+  const rangeStart = new Date(year - 1, 0, 1);
+  const rangeEnd = new Date(year + 1, 11, 31);
+  const expandOpts = { includeRecurring };
+  const filterOpts = { includeSingleDay };
+  state.greenEvents = getEventsForYear(filterEvents(expandRecurring(state.allGreenEvents, rangeStart, rangeEnd, expandOpts), filterOpts), year);
+  state.yellowEvents = getEventsForYear(filterEvents(expandRecurring(state.allYellowEvents, rangeStart, rangeEnd, expandOpts), filterOpts), year);
+
+  const weeks = generateYear(year);
 
   renderCalendar(calendarContainer, {
     weeks,
     holidays: state.holidays,
     greenEvents: state.greenEvents,
     yellowEvents: state.yellowEvents,
-    year: state.year,
+    year,
   });
 }
 
