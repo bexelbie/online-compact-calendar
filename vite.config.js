@@ -33,6 +33,19 @@ export default defineConfig({
             res.end('Missing url');
             return;
           }
+          let parsed;
+          try {
+            parsed = new URL(url);
+          } catch {
+            res.writeHead(400);
+            res.end('Invalid URL');
+            return;
+          }
+          if (parsed.protocol !== 'https:') {
+            res.writeHead(400);
+            res.end('Only HTTPS URLs are allowed');
+            return;
+          }
           try {
             const upstream = await fetch(url, {
               headers: {
