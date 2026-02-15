@@ -1,12 +1,11 @@
 # ABOUTME: GitHub Actions workflow for building and deploying to Azure Static Web Apps.
-# ABOUTME: Triggered on push to main. Builds the Vite site and deploys with the API function.
+# ABOUTME: Triggered when a GitHub Release is published. Builds the Vite site and deploys with the API function.
 
 name: Deploy to Azure Static Web Apps
 
 on:
-  push:
-    branches:
-      - main
+  release:
+    types: [published]
 
 jobs:
   build_and_deploy:

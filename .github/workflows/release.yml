@@ -1,0 +1,43 @@
+# ABOUTME: Creates a GitHub Release when a v* tag is pushed.
+# ABOUTME: Runs tests first, then extracts release notes from the tag's commit message.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract release notes from commit message
+        id: release_notes
+        run: |
+          COMMIT_MESSAGE=$(git log -1 --format=%B "${{ github.ref_name }}")
+          echo "message<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMIT_MESSAGE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: ${{ steps.release_notes.outputs.message }}
+          draft: false
+          prerelease: false
