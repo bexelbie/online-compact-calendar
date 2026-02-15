@@ -463,5 +463,8 @@ includeRecurringCheckbox.addEventListener('change', () => {
   loadAndRender();
 });
 
+// Display app version in credits
+document.getElementById('app-version').textContent = `v${__APP_VERSION__}`;
+
 // Initial render (holidays + grid even before ICS loads)
 loadAndRender();
