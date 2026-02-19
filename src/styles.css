@@ -29,20 +29,6 @@
   --grid-possible-swatch: #fff8e1;
 }
 
-/* High-contrast mode adds border cues so color isn't the only signal */
-[data-grid-contrast="high"] .day.committed-event {
-  border-left: 3px solid #0072B2;
-}
-
-[data-grid-contrast="high"] .day.possible-event {
-  border-left: 3px dashed #E69F00;
-}
-
-[data-grid-contrast="high"] .day.committed-event.possible-event {
-  border-left: 3px solid #0072B2;
-  border: 3px dashed var(--grid-overlap-border);
-}
-
 * {
   margin: 0;
   padding: 0;
