@@ -49,57 +49,83 @@ body {
   background: rgba(0,0,0,0.08);
 }
 
-/* --- Help section --- */
-.help-section {
-  margin-top: 32px;
-  padding-top: 16px;
-  border-top: 1px solid #ccc;
+/* --- Help modal --- */
+.help-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.help-overlay[hidden] {
+  display: none;
+}
+
+.help-modal {
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  max-width: 52em;
+  max-height: 80vh;
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+}
+
+.help-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #ccc;
+}
+
+.help-modal-header h2 {
+  margin: 0;
+  font-size: 1em;
+}
+
+.help-modal-body {
+  padding: 12px 16px;
+  overflow-y: auto;
   font-size: 0.867em;
   line-height: 1.5;
-  max-width: 60em;
 }
 
-.help-section h2 {
+.help-modal-body h2 {
   font-size: 1em;
-  margin-bottom: 10px;
+  margin-top: 16px;
+  margin-bottom: 8px;
 }
 
-.help-section dl {
+.help-modal-body dl {
   margin: 0;
 }
 
-.help-section dt {
+.help-modal-body dt {
   font-weight: bold;
   margin-top: 8px;
 }
 
-.help-section dd {
+.help-modal-body dd {
   margin-left: 0;
   margin-bottom: 4px;
 }
 
 .help-credits {
-  margin-top: 12px;
+  margin-top: 6px;
   font-size: 0.733em;
   color: #888;
 }
 
 .help-credits a {
   color: #666;
-}
-
-.back-to-calendar {
-  font-size: 0.8em;
-  color: #666;
-  text-decoration: none;
-  padding: 3px 10px;
-  border: 1px solid #999;
-  border-radius: 3px;
-  background: #f5f5f5;
-}
-
-.back-to-calendar:hover {
-  background: #e0e0e0;
 }
 
 /* --- Upload/settings controls --- */
@@ -213,6 +239,14 @@ body {
 .calendar-wrapper {
   display: inline-block;
   position: relative;
+}
+
+/* Constrain header and legend to table width, not the other way around */
+.calendar-header,
+.calendar-legend,
+.settings-panel {
+  width: 0;
+  min-width: 100%;
 }
 
 /* --- Calendar header: year nav left, settings + font controls right --- */
@@ -355,6 +389,15 @@ body {
   background: rgba(255,255,255,0.15);
 }
 
+.refresh-btn.spinning {
+  animation: spin 0.6s ease;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .font-controls {
   display: flex;
   align-items: center;
@@ -429,8 +472,11 @@ body {
 
 /* Spacer column between day grid and event columns */
 .spacer {
-  width: 8px;
+  width: 14px;
   border: none !important;
+  text-align: right !important;
+  vertical-align: top !important;
+  padding: 1px 0 1px 10px !important;
 }
 
 /* --- Day cells --- */
@@ -550,21 +596,36 @@ body {
 }
 
 /* --- Event columns --- */
-.col-events-header {
+.col-event-name {
   text-align: left !important;
-  padding-left: 36px;
-  width: 20.5em;
+  width: 16em;
 }
 
-.events-col {
+.col-event-date {
+  text-align: center !important;
+  width: 4.5em;
+}
+
+.event-name-col {
   text-align: left !important;
   font-size: 0.8em;
   padding-left: 8px !important;
   vertical-align: top !important;
-  width: 20.5em;
-  max-width: 20.5em;
+  width: 16em;
+  max-width: 16em;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.event-date-col {
+  text-align: center !important;
+  font-size: 0.8em;
+  vertical-align: top !important;
+  width: 4.5em;
+}
+
+.event-date-chip {
+  white-space: nowrap;
 }
 
 .event-chip {
@@ -575,44 +636,39 @@ body {
   display: inline-block;
   width: 7px;
   height: 7px;
-  border-radius: 50%;
   margin-right: 4px;
   vertical-align: middle;
 }
 
-/* Compact badge for overflow count */
-.event-more {
-  display: inline-block;
-  width: 22px;
-  text-align: center;
-  font-size: 0.833em;
-  color: #fff;
-  background: #888;
-  border-radius: 8px;
-  padding: 0 2px;
-  cursor: pointer;
-  user-select: none;
-  font-weight: bold;
-  line-height: 1.5;
-  vertical-align: middle;
-  margin-right: 6px;
+.event-dot.committed {
+  border-radius: 1px;
 }
 
-/* Empty placeholder — same width as badge, keeps dots aligned */
-.event-badge-spacer {
-  display: inline-block;
-  width: 28px;
+.event-dot.possible {
+  border-radius: 50%;
+}
+
+/* Compact toggle for overflow events — lives in spacer column */
+.event-more {
+  cursor: pointer;
+  user-select: none;
+  color: #666;
+  font-size: 1em;
 }
 
 .event-more:hover {
-  background: #555;
+  color: #333;
 }
 
-/* Overflow container — hidden by default, indented to align with first event */
-.event-overflow {
+/* Overflow container — hidden by default */
+.event-name-col .event-overflow {
   display: none;
   padding-top: 1px;
-  margin-left: 28px;
+}
+
+.event-date-col .event-overflow {
+  display: none;
+  padding-top: 1px;
 }
 
 .event-overflow .event-chip {
@@ -644,24 +700,92 @@ body {
 .legend-dot {
   width: 10px;
   height: 10px;
-  border-radius: 2px;
   display: inline-block;
+}
+
+.legend-dot.committed {
+  border-radius: 2px;
+}
+
+.legend-dot.possible {
+  border-radius: 50%;
+}
+
+.legend-separator {
+  color: #ccc;
+  margin: 0 2px;
+}
+
+/* Grid key row */
+.legend-grid-key {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* Grid color legend swatches */
+.legend-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  font-size: 0.75em;
+  text-align: center;
+  line-height: 14px;
+  font-weight: bold;
+}
+
+.holiday-swatch {
+  background: #f0f0f0;
+  color: #cc0000;
+}
+
+.holiday-swatch::after { content: '1'; }
+
+.first-day-swatch {
+  background: #dde3f0;
+  color: #222;
+}
+
+.first-day-swatch::after { content: '1'; }
+
+.committed-swatch {
+  background: #b6d7a8;
+}
+
+.possible-swatch {
+  background: #ffe599;
+}
+
+.overlap-swatch {
+  background: #b6d7a8;
+  border: 2px solid #e6a800;
 }
 
 /* --- Holiday reference list --- */
 .holiday-reference {
-  margin-top: 24px;
-  padding-top: 12px;
-  border-top: 1px solid #ccc;
+  margin-top: 8px;
 }
 
-.holiday-reference h2 {
-  font-size: 1em;
-  margin-bottom: 8px;
+.holiday-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.867em;
+  font-weight: bold;
+  color: #444;
+  padding: 4px 0;
+}
+
+.holiday-toggle:hover {
+  color: #000;
 }
 
 .holiday-reference ul {
   list-style: none;
+  margin-top: 4px;
 }
 
 .holiday-reference li {

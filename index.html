@@ -26,7 +26,7 @@
         </div>
         <div class="header-right">
           <button id="settings-btn" class="settings-btn" title="Settings">&#x2699;</button>
-          <a id="help-link" class="help-link" href="#help" title="Help">?</a>
+          <button id="help-btn" class="help-link" title="Help">?</button>
           <div class="font-controls">
             <button id="font-down">A&minus;</button>
             <span id="font-size-display"></span>
@@ -57,57 +57,70 @@
         <p class="controls-hint">For each calendar, choose <strong>URL</strong> to fetch a webcal link, <strong>File</strong> to load from your device, <strong>Demo</strong> to explore with sample data, or <strong>Clear</strong> to remove events.</p>
       </div>
       <div id="calendar-container"></div>
+      <p class="help-credits">Calendar layout inspired by <a href="https://davidseah.com/node/compact-calendar/" target="_blank" rel="noopener">DSri Seah's Compact Calendar</a> &middot; Built by <a href="https://www.bexelbie.com" target="_blank" rel="noopener">Brian "bex" Exelbierd</a> &middot; <a href="https://github.com/bexelbie/online-compact-calendar" target="_blank" rel="noopener">GitHub</a> &middot; <a href="https://github.com/bexelbie/online-compact-calendar/issues" target="_blank" rel="noopener">Feedback &amp; ideas</a> &middot; <span id="app-version" class="app-version"></span></p>
     </div>
 
-    <div id="help" class="help-section no-print">
-      <h2>How to use</h2>
+    <div id="help-overlay" class="help-overlay no-print" hidden>
+      <div class="help-modal">
+        <div class="help-modal-header">
+          <h2>Help</h2>
+          <button id="help-close" class="settings-close" title="Close">&times;</button>
+        </div>
+        <div class="help-modal-body">
       <dl>
         <dt>Settings</dt>
-        <dd>Click <strong>&#x2699;</strong> in the header bar to open the settings panel. All configuration &mdash; holidays, event sources, filters, and sharing &mdash; lives here. Close it by clicking <strong>&times;</strong>, pressing <strong>Escape</strong>, or clicking outside the panel.</dd>
+        <dd>Click <strong>&#x2699;</strong> in the header bar to open the settings panel. All configuration &mdash; holidays, calendars, filters, and sharing &mdash; lives here. Close it by clicking <strong>&times;</strong>, pressing <strong>Escape</strong>, or clicking outside the panel.</dd>
 
         <dt>Year navigation</dt>
-        <dd>Use the <strong>&lt;</strong> and <strong>&gt;</strong> buttons in the header bar to move between years.</dd>
+        <dd>Use the <strong>&lt;</strong> and <strong>&gt;</strong> buttons in the header bar to move between years. When you have URL-based calendars loaded, a <strong>&#x21bb;</strong> refresh button appears &mdash; click it to re-fetch all calendar URLs.</dd>
 
         <dt>Holidays</dt>
-        <dd>In settings, choose your country from the <strong>Holidays</strong> dropdown. The selection is saved and holiday data is cached locally for 30 days.</dd>
+        <dd>In settings, choose your country from the <strong>Holidays</strong> dropdown. The selection is saved and holiday data is cached locally for 30 days. Hover over any <span style="color:#cc0000">red-numbered</span> day in the grid to see the holiday name.</dd>
 
-        <dt>Events</dt>
-        <dd>In settings, each calendar has a dropdown with four options:
-          <strong>URL</strong> &mdash; enter a webcal:// or https:// calendar link and click Fetch;
+        <dt>Calendars</dt>
+        <dd>You can configure up to 6 calendars. Each calendar has:
+          a <strong>name</strong> you can edit,
+          a <strong>status</strong> (Committed or Possible),
+          and a <strong>source</strong> dropdown:
+          <strong>URL</strong> &mdash; enter a webcal:// or https:// link and click Fetch;
           <strong>File</strong> &mdash; upload a .ics file from your computer;
-          <strong>Demo</strong> &mdash; load sample data to see how the calendar looks;
+          <strong>Demo</strong> &mdash; load sample data (first two calendars only);
           <strong>Clear</strong> &mdash; remove loaded events.
-          Each calendar is tagged as <strong>Committed</strong> or <strong>Possible</strong> using a dropdown.
-          You can add up to 6 calendars with the <strong>+ Add Calendar</strong> button.
-          URLs are saved and automatically reloaded on your next visit.</dd>
+          Click <strong>+ Add Calendar</strong> to add more (up to 6 total). Each calendar is assigned a unique color automatically. URLs are saved and automatically reloaded on your next visit.</dd>
 
         <dt>Event filtering</dt>
         <dd>The calendar is designed for multi-day all-day events (trips, conferences, vacations). If you load a shared calendar that also contains appointments and single-day events, those are filtered out by default. Two checkboxes in settings control what appears:
           <strong>Include single-day all-day events</strong> &mdash; shows events like birthdays and holidays that span exactly one day;
           <strong>Include recurring all-day events</strong> &mdash; expands recurring events (e.g., weekly team days) to show all occurrences. The first occurrence of any recurring event always appears regardless of this setting.</dd>
 
-        <dt>Reading the calendar</dt>
-        <dd>Each row is one ISO week (Mon&ndash;Sun). <span style="color:#cc0000">Red text</span> = public holiday.
+        <dt>Reading the grid</dt>
+        <dd>Each row is one ISO week (Mon&ndash;Sun). The legend bar above the grid explains all visual conventions:
+          <span style="color:#cc0000">Red text</span> = public holiday (hover for name).
           <span style="background:#dde3f0; padding:0 3px">Blue background</span> = first of the month.
-          <span style="background:#b6d7a8; padding:0 3px">Green</span> = committed event.
-          <span style="background:#ffe599; padding:0 3px">Yellow</span> = possible event.
-          When green and yellow overlap, the cell is green with a yellow border.
-          The two event columns show each event with a colored dot matching its calendar.</dd>
+          <span style="background:#b6d7a8; padding:0 3px">Green</span> = committed event day.
+          <span style="background:#ffe599; padding:0 3px">Yellow</span> = possible event day.
+          <span style="background:#b6d7a8; border:2px solid #e6a800; padding:0 3px">Green + yellow border</span> = both committed and possible events overlap on that day.</dd>
+
+        <dt>Reading the event columns</dt>
+        <dd>Two columns beside the grid list events active each week: <strong>Committed</strong> and <strong>Possible</strong>.
+          Each event shows a colored shape matching its calendar &mdash; <strong>&#x25A0; square</strong> for committed calendars, <strong>&#x25CF; circle</strong> for possible calendars &mdash; followed by the event name, start date, and end date.
+          Events that continue from a previous week appear dimmed.
+          When a week has multiple events in one column, a <strong>&#x25B8;</strong> toggle appears in the spacer &mdash; click it to expand and see all events.</dd>
 
         <dt>Font size</dt>
-        <dd>Use <strong>A&minus;</strong> / <strong>A+</strong> in the header bar. Range: 10&ndash;24px.</dd>
+        <dd>Use <strong>A&minus;</strong> / <strong>A+</strong> in the header bar to adjust the font size across the entire page. Range: 10&ndash;24px.</dd>
 
         <dt>Printing</dt>
         <dd>All controls and this help section are hidden when you print. Colors are preserved.</dd>
 
         <dt>Sharing</dt>
-        <dd>When you have URL-based calendars loaded, a <strong>Share</strong> button appears in settings. Click it to copy a link that pre-configures the app with your calendar URLs and country. The link encodes your settings in the URL fragment (<code>#</code>), which never leaves your browser &mdash; it is not sent to any server. If you also have a file-based calendar loaded, you&rsquo;ll need to share that file separately.</dd>
+        <dd>When you have URL-based calendars loaded, a <strong>Share</strong> button appears in settings. Click it to copy a link that pre-configures the app with your calendar URLs, names, colors, and country. The link encodes your settings in the URL fragment (<code>#</code>), which never leaves your browser &mdash; it is not sent to any server. If you also have a file-based calendar loaded, you&rsquo;ll need to share that file separately.</dd>
       </dl>
 
       <h2>Privacy &amp; data</h2>
       <dl>
         <dt>Your data stays in your browser</dt>
-        <dd>This app stores your preferences (country, calendar URLs) and cached holiday data in your browser's local storage. This data is purely functional — it exists so the app works between visits. It is not used for tracking, analytics, or advertising, and is never sent to third parties.</dd>
+        <dd>This app stores your preferences (country, calendar configurations) and cached holiday data in your browser's local storage. This data is purely functional &mdash; it exists so the app works between visits. It is not used for tracking, analytics, or advertising, and is never sent to third parties.</dd>
 
         <dt>Calendar URL proxy</dt>
         <dd>When you fetch a calendar by URL, the request is routed through this site's server to work around browser security restrictions (CORS). The server forwards the request to your calendar provider and returns the data to your browser. <strong>The server does not store, log, or retain your calendar URLs or event data.</strong> If your URL contains authentication tokens (as iCloud URLs do), be aware the server briefly sees them in transit.</dd>
@@ -115,9 +128,8 @@
         <dt>Holiday API</dt>
         <dd>Holiday data is fetched from <a href="https://date.nager.at/" target="_blank" rel="noopener">Nager.Date</a>, a free public API. Requests go directly from your browser to their servers. Results are cached in your browser for 30 days to minimize API calls.</dd>
       </dl>
-
-      <p class="help-credits">Calendar layout inspired by <a href="https://davidseah.com/node/compact-calendar/" target="_blank" rel="noopener">DSri Seah's Compact Calendar</a>. Built by <a href="https://www.bexelbie.com" target="_blank" rel="noopener">Brian "bex" Exelbierd</a>. <a href="https://github.com/bexelbie/online-compact-calendar/issues" target="_blank" rel="noopener">Feedback &amp; ideas</a>. <span id="app-version" class="app-version"></span></p>
-      <p><a href="#calendar-top" class="back-to-calendar">&uarr; Back to calendar</a></p>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="/src/main.js"></script>

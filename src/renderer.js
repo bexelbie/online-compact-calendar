@@ -88,84 +88,126 @@ export function detectConflicts(possibleEvents, committedEvents) {
   return conflicts;
 }
 
-function fmtDateRange(event) {
-  const start = formatEventDate(event.startDate);
-  const end = formatEventDate(event.endDate);
-  const isSingleDay = localDateNum(event.startDate) === localDateNum(event.endDate);
-  return isSingleDay ? start : `${start}–${end}`;
-}
-
 /**
- * Create a single event chip element: colored dot + black text.
+ * Create name part of an event chip: colored shape + event name.
+ * Square for committed calendars, circle for possible.
  * Continuations (event started before this week) get dimmed styling.
  */
-function makeChip(event, calColor, startsThisWeek) {
+function makeNameChip(event, calColor, calStatus, startsThisWeek) {
   const chip = document.createElement('span');
   chip.className = 'event-chip';
   if (!startsThisWeek) chip.classList.add('continuation-dim');
 
   const dot = document.createElement('span');
-  dot.className = 'event-dot';
+  dot.className = 'event-dot ' + calStatus;
   dot.style.background = calColor;
   chip.appendChild(dot);
 
-  const text = document.createTextNode(`${event.summary}, ${fmtDateRange(event)}`);
+  const text = document.createTextNode(event.summary);
   chip.appendChild(text);
   return chip;
 }
 
 /**
- * Toggle the expand/collapse state of an overflow badge.
+ * Create start and end date chips for an event.
+ */
+function makeDateChips(event, startsThisWeek) {
+  const startChip = document.createElement('span');
+  startChip.className = 'event-chip event-date-chip';
+  if (!startsThisWeek) startChip.classList.add('continuation-dim');
+  startChip.textContent = formatEventDate(event.startDate);
+
+  const endChip = document.createElement('span');
+  endChip.className = 'event-chip event-date-chip';
+  if (!startsThisWeek) endChip.classList.add('continuation-dim');
+  endChip.textContent = formatEventDate(event.endDate);
+
+  return { startChip, endChip };
+}
+
+/**
+ * Toggle the expand/collapse state of overflow events.
+ * The button lives in the spacer cell; data-target points to the name cell id.
  */
 function toggleMore(btn) {
-  const cell = btn.parentElement;
-  const overflow = cell.querySelector('.event-overflow');
-  if (overflow.style.display === 'none') {
-    overflow.style.display = 'block';
-    btn.textContent = '−';
+  const targetId = btn.dataset.target;
+  const nameCell = document.getElementById(targetId);
+  if (!nameCell) return;
+  const startCell = nameCell.nextElementSibling;
+  const endCell = startCell ? startCell.nextElementSibling : null;
+  const overflows = [nameCell, startCell, endCell]
+    .filter(Boolean)
+    .map(c => c.querySelector('.event-overflow'))
+    .filter(Boolean);
+  const collapsed = overflows[0] && overflows[0].style.display === 'none';
+  for (const ov of overflows) {
+    ov.style.display = collapsed ? 'block' : 'none';
+  }
+  if (collapsed) {
+    btn.textContent = '▾';
     btn.title = 'Collapse';
   } else {
-    overflow.style.display = 'none';
-    const count = overflow.children.length;
-    btn.textContent = '+' + count;
+    const count = overflows[0].children.length;
+    btn.textContent = '▸';
     btn.title = count + ' more event' + (count > 1 ? 's' : '');
   }
 }
 
+// Monotonic counter for unique cell IDs within a render pass
+let cellIdCounter = 0;
+
 /**
- * Fill a table cell with event chips. Uses badge + expand for 2+ events.
- * Badge spacer keeps dots vertically aligned across rows.
+ * Fill spacer, name, start-date, and end-date cells with event data.
+ * Toggle marker goes in the spacer cell when there are 2+ events.
  */
-function fillEventsCell(cell, eventEntries) {
+function fillEventsCells(spacerCell, nameCell, startCell, endCell, eventEntries) {
   if (eventEntries.length === 0) {
-    const spacer = document.createElement('span');
-    spacer.className = 'event-badge-spacer';
-    cell.appendChild(spacer);
     return;
   }
 
+  const first = eventEntries[0];
   if (eventEntries.length === 1) {
-    const spacer = document.createElement('span');
-    spacer.className = 'event-badge-spacer';
-    cell.appendChild(spacer);
-    cell.appendChild(makeChip(eventEntries[0].event, eventEntries[0].calColor, eventEntries[0].startsThisWeek));
+    nameCell.appendChild(makeNameChip(first.event, first.calColor, first.calStatus, first.startsThisWeek));
+    const dates = makeDateChips(first.event, first.startsThisWeek);
+    startCell.appendChild(dates.startChip);
+    endCell.appendChild(dates.endChip);
   } else {
+    // Give the name cell a unique ID so the toggle can find it
+    const cellId = 'evt-' + (cellIdCounter++);
+    nameCell.id = cellId;
+
     const moreBtn = document.createElement('span');
     moreBtn.className = 'event-more';
-    moreBtn.textContent = '+' + (eventEntries.length - 1);
+    moreBtn.textContent = '▸';
+    moreBtn.dataset.target = cellId;
     moreBtn.title = (eventEntries.length - 1) + ' more event' + (eventEntries.length - 1 > 1 ? 's' : '');
     moreBtn.addEventListener('click', function () { toggleMore(this); });
-    cell.appendChild(moreBtn);
+    spacerCell.appendChild(moreBtn);
 
-    cell.appendChild(makeChip(eventEntries[0].event, eventEntries[0].calColor, eventEntries[0].startsThisWeek));
+    nameCell.appendChild(makeNameChip(first.event, first.calColor, first.calStatus, first.startsThisWeek));
+    const firstDates = makeDateChips(first.event, first.startsThisWeek);
+    startCell.appendChild(firstDates.startChip);
+    endCell.appendChild(firstDates.endChip);
 
-    const overflow = document.createElement('div');
-    overflow.className = 'event-overflow';
-    overflow.style.display = 'none';
+    const nameOverflow = document.createElement('div');
+    nameOverflow.className = 'event-overflow';
+    nameOverflow.style.display = 'none';
+    const startOverflow = document.createElement('div');
+    startOverflow.className = 'event-overflow';
+    startOverflow.style.display = 'none';
+    const endOverflow = document.createElement('div');
+    endOverflow.className = 'event-overflow';
+    endOverflow.style.display = 'none';
     for (let i = 1; i < eventEntries.length; i++) {
-      overflow.appendChild(makeChip(eventEntries[i].event, eventEntries[i].calColor, eventEntries[i].startsThisWeek));
+      const e = eventEntries[i];
+      nameOverflow.appendChild(makeNameChip(e.event, e.calColor, e.calStatus, e.startsThisWeek));
+      const dates = makeDateChips(e.event, e.startsThisWeek);
+      startOverflow.appendChild(dates.startChip);
+      endOverflow.appendChild(dates.endChip);
     }
-    cell.appendChild(overflow);
+    nameCell.appendChild(nameOverflow);
+    startCell.appendChild(startOverflow);
+    endCell.appendChild(endOverflow);
   }
 }
 
@@ -180,36 +222,69 @@ const HEADER_COLUMNS = [
   { text: 'Sa', className: 'col-day weekend-header' },
   { text: 'Su', className: 'col-day weekend-header' },
   { text: '', className: 'spacer' },
-  { text: 'Committed', className: 'col-events-header' },
+  { text: 'Committed', className: 'col-event-name' },
+  { text: 'Start', className: 'col-event-date' },
+  { text: 'End', className: 'col-event-date' },
   { text: '', className: 'spacer' },
-  { text: 'Possible', className: 'col-events-header' },
+  { text: 'Possible', className: 'col-event-name' },
+  { text: 'Start', className: 'col-event-date' },
+  { text: 'End', className: 'col-event-date' },
 ];
 
 export function renderCalendar(container, { weeks, holidays, calendars, year }) {
   container.innerHTML = '';
+  cellIdCounter = 0;
 
   const holidayMap = buildHolidayMap(holidays);
   const cals = calendars || [];
   const dayStatus = buildDayStatus(cals);
 
   // Build legend
-  if (cals.length > 0) {
-    const legend = document.createElement('div');
-    legend.className = 'calendar-legend';
-    for (const cal of cals) {
-      const item = document.createElement('span');
-      item.className = 'legend-item';
-      const dot = document.createElement('span');
-      dot.className = 'legend-dot';
-      dot.style.background = cal.color;
-      item.appendChild(dot);
-      const label = document.createElement('span');
-      label.textContent = `${cal.name} (${cal.status})`;
-      item.appendChild(label);
-      legend.appendChild(item);
-    }
-    container.appendChild(legend);
+  const legend = document.createElement('div');
+  legend.className = 'calendar-legend';
+
+  // Calendar color legend — square = committed, circle = possible
+  for (const cal of cals) {
+    const item = document.createElement('span');
+    item.className = 'legend-item';
+    const dot = document.createElement('span');
+    dot.className = 'legend-dot ' + cal.status;
+    dot.style.background = cal.color;
+    item.appendChild(dot);
+    const label = document.createElement('span');
+    label.textContent = cal.name;
+    item.appendChild(label);
+    legend.appendChild(item);
   }
+
+  // Grid color key — on its own line
+  const gridLine = document.createElement('div');
+  gridLine.className = 'legend-grid-key';
+
+  const gridKeys = [
+    { className: 'legend-swatch holiday-swatch', text: 'Holiday' },
+    { className: 'legend-swatch first-day-swatch', text: 'First of month' },
+    { className: 'legend-swatch committed-swatch', text: 'Committed' },
+    { className: 'legend-swatch possible-swatch', text: 'Possible' },
+    { className: 'legend-swatch overlap-swatch', text: 'Overlap' },
+    { className: 'legend-dot committed', text: '= committed cal', bg: '#666' },
+    { className: 'legend-dot possible', text: '= possible cal', bg: '#666' },
+  ];
+  for (const key of gridKeys) {
+    const item = document.createElement('span');
+    item.className = 'legend-item';
+    const swatch = document.createElement('span');
+    swatch.className = key.className;
+    if (key.bg) swatch.style.background = key.bg;
+    item.appendChild(swatch);
+    const label = document.createElement('span');
+    label.textContent = key.text;
+    item.appendChild(label);
+    gridLine.appendChild(item);
+  }
+
+  legend.appendChild(gridLine);
+  container.appendChild(legend);
 
   const table = document.createElement('table');
   table.className = 'compact-calendar';
@@ -293,7 +368,7 @@ export function renderCalendar(container, { weeks, holidays, calendars, year }) 
         const eEnd = localDateNum(event.endDate);
         if (eStart <= weekSundayNum && eEnd >= weekMondayNum) {
           const startsThisWeek = eStart >= weekMondayNum && eStart <= weekSundayNum;
-          const entry = { event, calColor: cal.color, startsThisWeek };
+          const entry = { event, calColor: cal.color, calStatus: cal.status, startsThisWeek };
           if (cal.status === 'committed') {
             committedEntries.push(entry);
           } else {
@@ -311,22 +386,34 @@ export function renderCalendar(container, { weeks, holidays, calendars, year }) 
     committedEntries.sort(sortFn);
     possibleEntries.sort(sortFn);
 
-    // Committed column
-    const committedCell = document.createElement('td');
-    committedCell.className = 'events-col';
-    fillEventsCell(committedCell, committedEntries);
-    tr.appendChild(committedCell);
+    // Committed: spacer + name + start + end columns
+    const committedNameCell = document.createElement('td');
+    committedNameCell.className = 'event-name-col';
+    const committedStartCell = document.createElement('td');
+    committedStartCell.className = 'event-date-col';
+    const committedEndCell = document.createElement('td');
+    committedEndCell.className = 'event-date-col';
+    fillEventsCells(spacer1, committedNameCell, committedStartCell, committedEndCell, committedEntries);
+    tr.appendChild(committedNameCell);
+    tr.appendChild(committedStartCell);
+    tr.appendChild(committedEndCell);
 
-    // Spacer
+    // Spacer between committed and possible
     const spacer2 = document.createElement('td');
     spacer2.className = 'spacer';
     tr.appendChild(spacer2);
 
-    // Possible column
-    const possibleCell = document.createElement('td');
-    possibleCell.className = 'events-col';
-    fillEventsCell(possibleCell, possibleEntries);
-    tr.appendChild(possibleCell);
+    // Possible: spacer2 + name + start + end columns
+    const possibleNameCell = document.createElement('td');
+    possibleNameCell.className = 'event-name-col';
+    const possibleStartCell = document.createElement('td');
+    possibleStartCell.className = 'event-date-col';
+    const possibleEndCell = document.createElement('td');
+    possibleEndCell.className = 'event-date-col';
+    fillEventsCells(spacer2, possibleNameCell, possibleStartCell, possibleEndCell, possibleEntries);
+    tr.appendChild(possibleNameCell);
+    tr.appendChild(possibleStartCell);
+    tr.appendChild(possibleEndCell);
 
     tbody.appendChild(tr);
   }
@@ -338,11 +425,13 @@ export function renderCalendar(container, { weeks, holidays, calendars, year }) 
     const section = document.createElement('div');
     section.className = 'holiday-reference';
 
-    const heading = document.createElement('h2');
-    heading.textContent = `Public Holidays ${year}`;
-    section.appendChild(heading);
+    const toggle = document.createElement('button');
+    toggle.className = 'holiday-toggle';
+    toggle.textContent = `▸ Public Holidays ${year}`;
+    section.appendChild(toggle);
 
     const list = document.createElement('ul');
+    list.hidden = true;
     const sorted = [...holidays].sort((a, b) => a.date - b.date);
     for (const h of sorted) {
       const li = document.createElement('li');
@@ -353,6 +442,12 @@ export function renderCalendar(container, { weeks, holidays, calendars, year }) 
       list.appendChild(li);
     }
     section.appendChild(list);
+
+    toggle.addEventListener('click', () => {
+      list.hidden = !list.hidden;
+      toggle.textContent = (list.hidden ? '▸' : '▾') + ` Public Holidays ${year}`;
+    });
+
     container.appendChild(section);
   }
 }

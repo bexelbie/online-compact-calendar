@@ -225,9 +225,21 @@ function toggleSettings() {
 settingsBtn.addEventListener('click', toggleSettings);
 settingsClose.addEventListener('click', () => { settingsPanel.hidden = true; });
 
+// Help modal toggle
+const helpOverlay = document.getElementById('help-overlay');
+const helpBtn = document.getElementById('help-btn');
+const helpClose = document.getElementById('help-close');
+
+helpBtn.addEventListener('click', () => { helpOverlay.hidden = false; });
+helpClose.addEventListener('click', () => { helpOverlay.hidden = true; });
+helpOverlay.addEventListener('click', (e) => {
+  if (e.target === helpOverlay) helpOverlay.hidden = true;
+});
+
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !settingsPanel.hidden) {
-    settingsPanel.hidden = true;
+  if (e.key === 'Escape') {
+    if (!helpOverlay.hidden) helpOverlay.hidden = true;
+    else if (!settingsPanel.hidden) settingsPanel.hidden = true;
   }
 });
 
@@ -378,6 +390,10 @@ function updateRefreshVisibility() {
 }
 
 refreshBtn.addEventListener('click', async () => {
+  refreshBtn.classList.remove('spinning');
+  // Force reflow so re-adding the class restarts the animation
+  void refreshBtn.offsetWidth;
+  refreshBtn.classList.add('spinning');
   const fetches = [];
   for (let i = 0; i < state.calendars.length; i++) {
     const cal = state.calendars[i];
@@ -554,12 +570,17 @@ function setupCalendar(calIndex) {
     if (fileInput.files[0]) handleFileUpload(fileInput.files[0], calIndex);
   });
 
-  // Restore saved URL from config
+  // Restore saved URL from config — only fetch if events aren't already loaded
   if (cal.source.type === 'url' && cal.source.value) {
     urlInput.value = cal.source.value;
     modeSelect.value = 'url';
     applyMode('url');
-    fetchIcsFromUrl(cal.source.value, calIndex);
+    if (cal.allEvents.length === 0) {
+      fetchIcsFromUrl(cal.source.value, calIndex);
+    } else {
+      statusEl.textContent = `${cal.events.length} events`;
+      statusEl.className = 'load-status success';
+    }
   } else {
     applyMode('url');
   }
