@@ -1,5 +1,10 @@
-// ABOUTME: Renders the compact calendar as an HTML table in the DOM.
-// ABOUTME: Exports renderCalendar() and pure logic functions for event placement and conflict detection.
+// ABOUTME: Renders the compact calendar as an HTML table with two event columns (Committed, Possible).
+// ABOUTME: Exports renderCalendar() and pure logic functions for conflict detection and date formatting.
+
+// 6-calendar color palette — must match main.js CALENDAR_COLORS
+const CALENDAR_COLORS = [
+  '#1a60a8', '#c75400', '#7b1fa2', '#00796b', '#b5145a', '#827717',
+];
 
 function dateKey(y, m, d) {
   return `${y}-${m}-${d}`;
@@ -38,133 +43,44 @@ function buildHolidayMap(holidays) {
   return map;
 }
 
-function buildEventDayKeys(events) {
-  const keys = new Set();
-  for (const event of events) {
-    const current = new Date(event.startDate);
-    const end = new Date(event.endDate);
-    current.setHours(0, 0, 0, 0);
-    end.setHours(0, 0, 0, 0);
-    while (current <= end) {
-      keys.add(localDateKey(current));
-      current.setDate(current.getDate() + 1);
+/**
+ * Build a map of day key → { hasCommitted, hasPossible } for grid coloring.
+ * Examines all calendars and their committed/possible status.
+ */
+function buildDayStatus(calendars) {
+  const status = {};
+  for (const cal of calendars) {
+    for (const event of cal.events) {
+      const current = new Date(event.startDate);
+      const end = new Date(event.endDate);
+      current.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      while (current <= end) {
+        const k = localDateKey(current);
+        if (!status[k]) status[k] = { hasCommitted: false, hasPossible: false };
+        if (cal.status === 'committed') status[k].hasCommitted = true;
+        if (cal.status === 'possible') status[k].hasPossible = true;
+        current.setDate(current.getDate() + 1);
+      }
     }
   }
-  return keys;
-}
-
-function eventOverlapsWeek(event, weekMondayNum, weekSundayNum) {
-  const eventStart = localDateNum(event.startDate);
-  const eventEnd = localDateNum(event.endDate);
-  return eventStart <= weekSundayNum && eventEnd >= weekMondayNum;
-}
-
-function eventStartsInWeek(event, weekMondayNum, weekSundayNum) {
-  const eventStart = localDateNum(event.startDate);
-  return eventStart >= weekMondayNum && eventStart <= weekSundayNum;
+  return status;
 }
 
 /**
- * Pre-compute event placements for a band (green or yellow).
- * Returns a Map of rowIndex → { event, ongoing: false } for rows with a starting event,
- * and marks rows where an event is ongoing but no label is shown.
- *
- * When multiple events start in the same week, only the first gets the home row.
- * Extras spill to the nearest empty row (prefer downward, then upward).
+ * Detect conflicts: possible events that overlap any committed event.
+ * Returns a Set of conflicting possible events.
  */
-export function computeEventPlacements(events, weeks) {
-  const totalRows = weeks.length;
-  // placements[i] = { event, ongoing } or null
-  const placements = new Array(totalRows).fill(null);
-
-  // Track which rows have an ongoing event (for background band styling)
-  const ongoingRows = new Set();
-
-  // First pass: find which week each event starts in, and mark ongoing rows
-  const eventsByStartWeek = new Map(); // weekIndex → [events]
-  const firstWeekMondayNum = totalRows > 0 ? gridDateNum(weeks[0].days[0]) : 0;
-
-  for (const event of events) {
-    let placed = false;
-    for (let wi = 0; wi < totalRows; wi++) {
-      const weekMondayNum = gridDateNum(weeks[wi].days[0]);
-      const weekSundayNum = gridDateNum(weeks[wi].days[6]);
-
-      if (eventOverlapsWeek(event, weekMondayNum, weekSundayNum)) {
-        ongoingRows.add(wi);
-      }
-
-      if (!placed) {
-        const startsHere = eventStartsInWeek(event, weekMondayNum, weekSundayNum);
-        const preCalendar = wi === 0 && localDateNum(event.startDate) < firstWeekMondayNum;
-        if (startsHere || preCalendar) {
-          if (!eventsByStartWeek.has(wi)) eventsByStartWeek.set(wi, []);
-          eventsByStartWeek.get(wi).push(event);
-          placed = true;
-        }
-      }
-    }
-  }
-
-  // Second pass: place events, spilling overflow to nearby rows
-  for (const [weekIndex, weekEvents] of eventsByStartWeek) {
-    // Sort by start date so the earliest gets the home row
-    weekEvents.sort((a, b) => localDateNum(a.startDate) - localDateNum(b.startDate));
-
-    for (let i = 0; i < weekEvents.length; i++) {
-      const event = weekEvents[i];
-      if (i === 0 && placements[weekIndex] === null) {
-        placements[weekIndex] = { event, ongoing: false };
-      } else {
-        // Spill: search nearby rows for an empty slot, prefer downward then upward
-        let placed = false;
-        for (let offset = 1; offset < totalRows; offset++) {
-          const down = weekIndex + offset;
-          if (down < totalRows && placements[down] === null) {
-            placements[down] = { event, ongoing: false };
-            placed = true;
-            break;
-          }
-          const up = weekIndex - offset;
-          if (up >= 0 && placements[up] === null) {
-            placements[up] = { event, ongoing: false };
-            placed = true;
-            break;
-          }
-        }
-        if (!placed) {
-          // Last resort: overwrite home row by appending to summary
-          // This should be extremely rare
-          const home = placements[weekIndex];
-          if (home) {
-            home.event = {
-              summary: `${home.event.summary}, ${event.summary}`,
-              startDate: localDateNum(home.event.startDate) < localDateNum(event.startDate) ? home.event.startDate : event.startDate,
-              endDate: localDateNum(home.event.endDate) > localDateNum(event.endDate) ? home.event.endDate : event.endDate,
-            };
-          }
-        }
-      }
-    }
-  }
-
-  return { placements, ongoingRows };
-}
-
-function eventsOverlap(eventA, eventB) {
-  const aStart = localDateNum(eventA.startDate);
-  const aEnd = localDateNum(eventA.endDate);
-  const bStart = localDateNum(eventB.startDate);
-  const bEnd = localDateNum(eventB.endDate);
-  return aStart <= bEnd && bStart <= aEnd;
-}
-
-export function detectConflicts(yellowEvents, greenEvents) {
+export function detectConflicts(possibleEvents, committedEvents) {
   const conflicts = new Set();
-  for (const yellow of yellowEvents) {
-    for (const green of greenEvents) {
-      if (eventsOverlap(yellow, green)) {
-        conflicts.add(yellow);
+  for (const p of possibleEvents) {
+    const pStart = localDateNum(p.startDate);
+    const pEnd = localDateNum(p.endDate);
+    for (const c of committedEvents) {
+      const cStart = localDateNum(c.startDate);
+      const cEnd = localDateNum(c.endDate);
+      if (pStart <= cEnd && cStart <= pEnd) {
+        conflicts.add(p);
         break;
       }
     }
@@ -172,32 +88,84 @@ export function detectConflicts(yellowEvents, greenEvents) {
   return conflicts;
 }
 
-function appendEventCells(tr, placement, isOngoing, bandClass, hasConflict) {
-  if (placement) {
-    const whatCell = document.createElement('td');
-    whatCell.className = `event-what ${bandClass}`;
-    whatCell.textContent = placement.event.summary;
-    tr.appendChild(whatCell);
+function fmtDateRange(event) {
+  const start = formatEventDate(event.startDate);
+  const end = formatEventDate(event.endDate);
+  const isSingleDay = localDateNum(event.startDate) === localDateNum(event.endDate);
+  return isSingleDay ? start : `${start}–${end}`;
+}
 
-    const startCell = document.createElement('td');
-    startCell.className = `event-date ${bandClass}${hasConflict ? ' conflict' : ''}`;
-    startCell.textContent = formatEventDate(placement.event.startDate);
-    tr.appendChild(startCell);
+/**
+ * Create a single event chip element: colored dot + black text.
+ * Continuations (event started before this week) get dimmed styling.
+ */
+function makeChip(event, calColor, startsThisWeek) {
+  const chip = document.createElement('span');
+  chip.className = 'event-chip';
+  if (!startsThisWeek) chip.classList.add('continuation-dim');
 
-    const endCell = document.createElement('td');
-    endCell.className = `event-date ${bandClass}${hasConflict ? ' conflict' : ''}`;
-    endCell.textContent = formatEventDate(placement.event.endDate);
-    tr.appendChild(endCell);
-  } else if (isOngoing) {
-    for (let i = 0; i < 3; i++) {
-      const cell = document.createElement('td');
-      cell.className = bandClass;
-      tr.appendChild(cell);
-    }
+  const dot = document.createElement('span');
+  dot.className = 'event-dot';
+  dot.style.background = calColor;
+  chip.appendChild(dot);
+
+  const text = document.createTextNode(`${event.summary}, ${fmtDateRange(event)}`);
+  chip.appendChild(text);
+  return chip;
+}
+
+/**
+ * Toggle the expand/collapse state of an overflow badge.
+ */
+function toggleMore(btn) {
+  const cell = btn.parentElement;
+  const overflow = cell.querySelector('.event-overflow');
+  if (overflow.style.display === 'none') {
+    overflow.style.display = 'block';
+    btn.textContent = '−';
+    btn.title = 'Collapse';
   } else {
-    for (let i = 0; i < 3; i++) {
-      tr.appendChild(document.createElement('td'));
+    overflow.style.display = 'none';
+    const count = overflow.children.length;
+    btn.textContent = '+' + count;
+    btn.title = count + ' more event' + (count > 1 ? 's' : '');
+  }
+}
+
+/**
+ * Fill a table cell with event chips. Uses badge + expand for 2+ events.
+ * Badge spacer keeps dots vertically aligned across rows.
+ */
+function fillEventsCell(cell, eventEntries) {
+  if (eventEntries.length === 0) {
+    const spacer = document.createElement('span');
+    spacer.className = 'event-badge-spacer';
+    cell.appendChild(spacer);
+    return;
+  }
+
+  if (eventEntries.length === 1) {
+    const spacer = document.createElement('span');
+    spacer.className = 'event-badge-spacer';
+    cell.appendChild(spacer);
+    cell.appendChild(makeChip(eventEntries[0].event, eventEntries[0].calColor, eventEntries[0].startsThisWeek));
+  } else {
+    const moreBtn = document.createElement('span');
+    moreBtn.className = 'event-more';
+    moreBtn.textContent = '+' + (eventEntries.length - 1);
+    moreBtn.title = (eventEntries.length - 1) + ' more event' + (eventEntries.length - 1 > 1 ? 's' : '');
+    moreBtn.addEventListener('click', function () { toggleMore(this); });
+    cell.appendChild(moreBtn);
+
+    cell.appendChild(makeChip(eventEntries[0].event, eventEntries[0].calColor, eventEntries[0].startsThisWeek));
+
+    const overflow = document.createElement('div');
+    overflow.className = 'event-overflow';
+    overflow.style.display = 'none';
+    for (let i = 1; i < eventEntries.length; i++) {
+      overflow.appendChild(makeChip(eventEntries[i].event, eventEntries[i].calColor, eventEntries[i].startsThisWeek));
     }
+    cell.appendChild(overflow);
   }
 }
 
@@ -212,25 +180,36 @@ const HEADER_COLUMNS = [
   { text: 'Sa', className: 'col-day weekend-header' },
   { text: 'Su', className: 'col-day weekend-header' },
   { text: '', className: 'spacer' },
-  { text: 'Committed', className: 'col-event-what' },
-  { text: 'Start', className: 'col-event-date' },
-  { text: 'End', className: 'col-event-date' },
+  { text: 'Committed', className: 'col-events-header' },
   { text: '', className: 'spacer' },
-  { text: 'Possible', className: 'col-event-what' },
-  { text: 'Start', className: 'col-event-date' },
-  { text: 'End', className: 'col-event-date' },
+  { text: 'Possible', className: 'col-events-header' },
 ];
 
-export function renderCalendar(container, { weeks, holidays, greenEvents, yellowEvents, year }) {
+export function renderCalendar(container, { weeks, holidays, calendars, year }) {
   container.innerHTML = '';
 
   const holidayMap = buildHolidayMap(holidays);
-  const greenDayKeys = buildEventDayKeys(greenEvents);
-  const yellowDayKeys = buildEventDayKeys(yellowEvents);
+  const cals = calendars || [];
+  const dayStatus = buildDayStatus(cals);
 
-  const greenPlacement = computeEventPlacements(greenEvents, weeks);
-  const yellowPlacement = computeEventPlacements(yellowEvents, weeks);
-  const yellowConflicts = detectConflicts(yellowEvents, greenEvents);
+  // Build legend
+  if (cals.length > 0) {
+    const legend = document.createElement('div');
+    legend.className = 'calendar-legend';
+    for (const cal of cals) {
+      const item = document.createElement('span');
+      item.className = 'legend-item';
+      const dot = document.createElement('span');
+      dot.className = 'legend-dot';
+      dot.style.background = cal.color;
+      item.appendChild(dot);
+      const label = document.createElement('span');
+      label.textContent = `${cal.name} (${cal.status})`;
+      item.appendChild(label);
+      legend.appendChild(item);
+    }
+    container.appendChild(legend);
+  }
 
   const table = document.createElement('table');
   table.className = 'compact-calendar';
@@ -252,17 +231,23 @@ export function renderCalendar(container, { weeks, holidays, greenEvents, yellow
     const week = weeks[weekIndex];
     const tr = document.createElement('tr');
 
+    // Week number
     const weekCell = document.createElement('td');
     weekCell.className = 'col-week';
     weekCell.textContent = String(week.weekNumber).padStart(2, '0');
     tr.appendChild(weekCell);
 
+    // Month
     const monthCell = document.createElement('td');
     monthCell.className = 'col-month';
     if (week.month !== null) {
       monthCell.textContent = week.month;
     }
     tr.appendChild(monthCell);
+
+    // Day cells — binary committed/possible coloring
+    const weekMondayNum = gridDateNum(week.days[0]);
+    const weekSundayNum = gridDateNum(week.days[6]);
 
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
       const day = week.days[dayIndex];
@@ -278,8 +263,13 @@ export function renderCalendar(container, { weeks, holidays, greenEvents, yellow
       if (isWeekend) classes.push('weekend');
       if (isHoliday && !isWeekend) classes.push('holiday');
       if (isHoliday && isWeekend) classes.push('weekend-holiday');
-      if (greenDayKeys.has(key)) classes.push('green-event');
-      if (yellowDayKeys.has(key)) classes.push('yellow-event');
+
+      // Binary green/yellow coloring from all calendars
+      const ds = dayStatus[key];
+      if (ds) {
+        if (ds.hasCommitted) classes.push('committed-event');
+        if (ds.hasPossible) classes.push('possible-event');
+      }
 
       dayCell.className = classes.join(' ');
       dayCell.textContent = day.getUTCDate();
@@ -288,19 +278,55 @@ export function renderCalendar(container, { weeks, holidays, greenEvents, yellow
       tr.appendChild(dayCell);
     }
 
+    // Spacer
     const spacer1 = document.createElement('td');
     spacer1.className = 'spacer';
     tr.appendChild(spacer1);
 
-    appendEventCells(tr, greenPlacement.placements[weekIndex], greenPlacement.ongoingRows.has(weekIndex), 'green-band', false);
+    // Gather events active this week, split by committed/possible
+    const committedEntries = [];
+    const possibleEntries = [];
 
+    for (const cal of cals) {
+      for (const event of cal.events) {
+        const eStart = localDateNum(event.startDate);
+        const eEnd = localDateNum(event.endDate);
+        if (eStart <= weekSundayNum && eEnd >= weekMondayNum) {
+          const startsThisWeek = eStart >= weekMondayNum && eStart <= weekSundayNum;
+          const entry = { event, calColor: cal.color, startsThisWeek };
+          if (cal.status === 'committed') {
+            committedEntries.push(entry);
+          } else {
+            possibleEntries.push(entry);
+          }
+        }
+      }
+    }
+
+    // Sort: starting events first, then continuations, each by start date
+    const sortFn = (a, b) => {
+      if (a.startsThisWeek !== b.startsThisWeek) return a.startsThisWeek ? -1 : 1;
+      return localDateNum(a.event.startDate) - localDateNum(b.event.startDate);
+    };
+    committedEntries.sort(sortFn);
+    possibleEntries.sort(sortFn);
+
+    // Committed column
+    const committedCell = document.createElement('td');
+    committedCell.className = 'events-col';
+    fillEventsCell(committedCell, committedEntries);
+    tr.appendChild(committedCell);
+
+    // Spacer
     const spacer2 = document.createElement('td');
     spacer2.className = 'spacer';
     tr.appendChild(spacer2);
 
-    const yellowP = yellowPlacement.placements[weekIndex];
-    const yellowHasConflict = yellowP ? yellowConflicts.has(yellowP.event) : false;
-    appendEventCells(tr, yellowP, yellowPlacement.ongoingRows.has(weekIndex), 'yellow-band', yellowHasConflict);
+    // Possible column
+    const possibleCell = document.createElement('td');
+    possibleCell.className = 'events-col';
+    fillEventsCell(possibleCell, possibleEntries);
+    tr.appendChild(possibleCell);
 
     tbody.appendChild(tr);
   }

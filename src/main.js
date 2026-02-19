@@ -1,5 +1,5 @@
 // ABOUTME: Entry point for the compact calendar app.
-// ABOUTME: Handles year navigation, ICS file/URL loading with localStorage persistence, and orchestrates rendering.
+// ABOUTME: Manages multi-calendar state (up to 6), settings UI, ICS loading, localStorage persistence, and orchestrates rendering.
 
 import './styles.css';
 import { generateYear } from './calendar-grid.js';
@@ -11,35 +11,155 @@ import { encodeShareHash, decodeShareHash, buildShareStatus } from './share.js';
 // Clean up expired cache entries on startup
 evictStaleCache();
 
-const STORAGE_KEY_GREEN_URL = 'compact-cal-green-url';
-const STORAGE_KEY_YELLOW_URL = 'compact-cal-yellow-url';
+const STORAGE_KEY_CALENDARS = 'compact-cal-calendars';
 const STORAGE_KEY_COUNTRY = 'compact-cal-country';
 const STORAGE_KEY_INCLUDE_SINGLE_DAY = 'compact-cal-include-single-day';
 const STORAGE_KEY_INCLUDE_RECURRING = 'compact-cal-include-recurring';
+const STORAGE_KEY_MIGRATED = 'compact-cal-migrated';
+
+// Old format keys — used only for migration detection
+const LEGACY_KEY_GREEN_URL = 'compact-cal-green-url';
+const LEGACY_KEY_YELLOW_URL = 'compact-cal-yellow-url';
+
+// 6-calendar color palette
+export const CALENDAR_COLORS = [
+  '#1a60a8', // Blue
+  '#c75400', // Orange
+  '#7b1fa2', // Purple
+  '#00796b', // Teal
+  '#b5145a', // Magenta
+  '#827717', // Olive
+];
+
+const MAX_CALENDARS = 6;
+
+function createCalendar(index, overrides = {}) {
+  const defaults = {
+    id: `cal-${Date.now()}-${index}`,
+    name: index === 0 ? 'Committed' : index === 1 ? 'Possible' : `Calendar ${index + 1}`,
+    color: CALENDAR_COLORS[index % CALENDAR_COLORS.length],
+    status: index === 0 ? 'committed' : index === 1 ? 'possible' : 'committed',
+    source: { type: 'url', value: '' },
+    overrides: { includeSingleDay: null, includeRecurring: null },
+  };
+  return { ...defaults, ...overrides, events: [], allEvents: [] };
+}
+
+// --- Migration from old green/yellow format ---
+function migrateFromLegacyFormat() {
+  const greenUrl = localStorage.getItem(LEGACY_KEY_GREEN_URL);
+  const yellowUrl = localStorage.getItem(LEGACY_KEY_YELLOW_URL);
+
+  if (!greenUrl && !yellowUrl) return null;
+
+  const calendars = [];
+  if (greenUrl || yellowUrl) {
+    const cal1 = createCalendar(0);
+    if (greenUrl) {
+      cal1.source = { type: 'url', value: greenUrl };
+    }
+    calendars.push(cal1);
+
+    const cal2 = createCalendar(1);
+    if (yellowUrl) {
+      cal2.source = { type: 'url', value: yellowUrl };
+    }
+    calendars.push(cal2);
+  }
+
+  // Persist new format
+  saveCalendarConfigs(calendars);
+
+  // Remove old keys
+  localStorage.removeItem(LEGACY_KEY_GREEN_URL);
+  localStorage.removeItem(LEGACY_KEY_YELLOW_URL);
+
+  // Flag for migration banner
+  localStorage.setItem(STORAGE_KEY_MIGRATED, 'pending');
+
+  return calendars;
+}
+
+function saveCalendarConfigs(calendars) {
+  const configs = calendars.map(c => ({
+    id: c.id,
+    name: c.name,
+    color: c.color,
+    status: c.status,
+    source: c.source,
+    overrides: c.overrides,
+  }));
+  localStorage.setItem(STORAGE_KEY_CALENDARS, JSON.stringify(configs));
+}
+
+function loadCalendarConfigs() {
+  const raw = localStorage.getItem(STORAGE_KEY_CALENDARS);
+  if (!raw) return null;
+  try {
+    const configs = JSON.parse(raw);
+    return configs.map((cfg, i) => createCalendar(i, cfg));
+  } catch {
+    return null;
+  }
+}
+
+// --- Initialize calendars ---
+function initCalendars() {
+  // Try new format first
+  let calendars = loadCalendarConfigs();
+  if (calendars) return calendars;
+
+  // Try migrating from old format
+  calendars = migrateFromLegacyFormat();
+  if (calendars) return calendars;
+
+  // Fresh install — start empty (banner will show)
+  return [];
+}
 
 // Apply shared config from URL hash if present
 const shareHash = window.location.hash.slice(1);
+let initialCalendars = initCalendars();
+
 if (shareHash) {
   const shareConfig = decodeShareHash(shareHash);
   if (shareConfig) {
-    const hasExisting = localStorage.getItem(STORAGE_KEY_GREEN_URL) || localStorage.getItem(STORAGE_KEY_YELLOW_URL);
+    const hasExisting = initialCalendars.length > 0 &&
+      initialCalendars.some(c => c.source.value);
     const shouldApply = !hasExisting || window.confirm(
       'This link will replace your current calendar configuration. Continue?'
     );
     if (shouldApply) {
-      if (shareConfig.greenUrl) {
-        localStorage.setItem(STORAGE_KEY_GREEN_URL, shareConfig.greenUrl);
+      if (shareConfig.calendars) {
+        // New format share link
+        initialCalendars = shareConfig.calendars.map((cfg, i) => createCalendar(i, {
+          name: cfg.name,
+          color: cfg.color,
+          status: cfg.status,
+          source: { type: 'url', value: cfg.url },
+        }));
       } else {
-        localStorage.removeItem(STORAGE_KEY_GREEN_URL);
-      }
-      if (shareConfig.yellowUrl) {
-        localStorage.setItem(STORAGE_KEY_YELLOW_URL, shareConfig.yellowUrl);
-      } else {
-        localStorage.removeItem(STORAGE_KEY_YELLOW_URL);
+        // Legacy format share link
+        initialCalendars = [];
+        if (shareConfig.greenUrl) {
+          initialCalendars.push(createCalendar(0, {
+            source: { type: 'url', value: shareConfig.greenUrl },
+          }));
+        }
+        if (shareConfig.yellowUrl) {
+          const idx = initialCalendars.length;
+          initialCalendars.push(createCalendar(idx, {
+            name: 'Possible',
+            status: 'possible',
+            color: CALENDAR_COLORS[1],
+            source: { type: 'url', value: shareConfig.yellowUrl },
+          }));
+        }
       }
       if (shareConfig.countryCode) {
         localStorage.setItem(STORAGE_KEY_COUNTRY, shareConfig.countryCode);
       }
+      saveCalendarConfigs(initialCalendars);
     }
     // Clear hash from URL bar so it doesn't persist in bookmarks
     history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -51,7 +171,7 @@ const welcomeBanner = document.getElementById('welcome-banner');
 let bannerDismissedThisSession = false;
 
 function updateBannerVisibility() {
-  const hasData = state.allGreenEvents.length > 0 || state.allYellowEvents.length > 0;
+  const hasData = state.calendars.some(c => c.allEvents.length > 0);
   if (hasData || bannerDismissedThisSession) {
     welcomeBanner.classList.remove('visible');
   } else {
@@ -59,13 +179,26 @@ function updateBannerVisibility() {
   }
 }
 
-const hasSavedUrls = localStorage.getItem(STORAGE_KEY_GREEN_URL) || localStorage.getItem(STORAGE_KEY_YELLOW_URL);
-if (!hasSavedUrls) {
+const hasSavedData = initialCalendars.length > 0 &&
+  initialCalendars.some(c => c.source.value);
+if (!hasSavedData) {
   welcomeBanner.classList.add('visible');
 }
 document.getElementById('welcome-dismiss').addEventListener('click', () => {
   bannerDismissedThisSession = true;
   welcomeBanner.classList.remove('visible');
+});
+
+// Migration banner — shown once after auto-migrating from old green/yellow format
+const migrationBanner = document.getElementById('migration-banner');
+if (localStorage.getItem(STORAGE_KEY_MIGRATED) === 'pending') {
+  migrationBanner.hidden = false;
+  migrationBanner.classList.add('visible');
+}
+document.getElementById('migration-dismiss').addEventListener('click', () => {
+  migrationBanner.hidden = true;
+  migrationBanner.classList.remove('visible');
+  localStorage.setItem(STORAGE_KEY_MIGRATED, 'done');
 });
 
 const state = {
@@ -74,10 +207,7 @@ const state = {
   includeSingleDay: localStorage.getItem(STORAGE_KEY_INCLUDE_SINGLE_DAY) === 'true',
   includeRecurring: localStorage.getItem(STORAGE_KEY_INCLUDE_RECURRING) === 'true',
   holidays: [],
-  greenEvents: [],
-  yellowEvents: [],
-  allGreenEvents: [],
-  allYellowEvents: [],
+  calendars: initialCalendars,
 };
 
 const calendarContainer = document.getElementById('calendar-container');
@@ -129,26 +259,39 @@ async function loadAndRender() {
 
   const rangeStart = new Date(year - 1, 0, 1);
   const rangeEnd = new Date(year + 1, 11, 31);
-  const expandOpts = { includeRecurring };
-  const filterOpts = { includeSingleDay };
-  state.greenEvents = getEventsForYear(filterEvents(expandRecurring(state.allGreenEvents, rangeStart, rangeEnd, expandOpts), filterOpts), year);
-  state.yellowEvents = getEventsForYear(filterEvents(expandRecurring(state.allYellowEvents, rangeStart, rangeEnd, expandOpts), filterOpts), year);
+
+  // Process each calendar's events for the current year
+  for (const cal of state.calendars) {
+    const calIncludeSingleDay = cal.overrides.includeSingleDay !== null
+      ? cal.overrides.includeSingleDay : includeSingleDay;
+    const calIncludeRecurring = cal.overrides.includeRecurring !== null
+      ? cal.overrides.includeRecurring : includeRecurring;
+
+    const expandOpts = { includeRecurring: calIncludeRecurring };
+    const filterOpts = { includeSingleDay: calIncludeSingleDay };
+    cal.events = getEventsForYear(
+      filterEvents(expandRecurring(cal.allEvents, rangeStart, rangeEnd, expandOpts), filterOpts),
+      year
+    );
+  }
 
   const weeks = generateYear(year);
 
   renderCalendar(calendarContainer, {
     weeks,
     holidays: state.holidays,
-    greenEvents: state.greenEvents,
-    yellowEvents: state.yellowEvents,
+    calendars: state.calendars,
     year,
   });
 }
 
-async function fetchIcsFromUrl(url, color) {
-  const statusEl = document.getElementById(`${color}-status`);
-  statusEl.textContent = 'Loading...';
-  statusEl.className = 'load-status';
+async function fetchIcsFromUrl(url, calIndex) {
+  const cal = state.calendars[calIndex];
+  const statusEl = document.getElementById(`cal-${calIndex}-status`);
+  if (statusEl) {
+    statusEl.textContent = 'Loading...';
+    statusEl.className = 'load-status';
+  }
 
   try {
     const httpsUrl = normalizeIcsUrl(url);
@@ -163,53 +306,53 @@ async function fetchIcsFromUrl(url, color) {
     const icsText = await response.text();
     const events = parseICS(icsText);
 
-    if (color === 'green') {
-      state.allGreenEvents = events;
-    } else {
-      state.allYellowEvents = events;
+    cal.allEvents = events;
+    cal.source = { type: 'url', value: url.trim() };
+
+    saveCalendarConfigs(state.calendars);
+
+    if (statusEl) {
+      statusEl.textContent = `${events.length} events`;
+      statusEl.className = 'load-status success';
     }
-
-    localStorage.setItem(
-      color === 'green' ? STORAGE_KEY_GREEN_URL : STORAGE_KEY_YELLOW_URL,
-      url.trim()
-    );
-
-    statusEl.textContent = `${events.length} events`;
-    statusEl.className = 'load-status success';
     updateRefreshVisibility();
     updateShareVisibility();
     updateBannerVisibility();
     loadAndRender();
   } catch (err) {
     console.error(`Failed to fetch ICS: ${err.message}`);
-    statusEl.textContent = `Error: ${err.message}`;
-    statusEl.className = 'load-status error';
+    if (statusEl) {
+      statusEl.textContent = `Error: ${err.message}`;
+      statusEl.className = 'load-status error';
+    }
   }
 }
 
-function handleFileUpload(file, color) {
-  const statusEl = document.getElementById(`${color}-status`);
-  const storageKey = color === 'green' ? STORAGE_KEY_GREEN_URL : STORAGE_KEY_YELLOW_URL;
+function handleFileUpload(file, calIndex) {
+  const cal = state.calendars[calIndex];
+  const statusEl = document.getElementById(`cal-${calIndex}-status`);
   const reader = new FileReader();
   reader.onload = (e) => {
     try {
       const events = parseICS(e.target.result);
-      if (color === 'green') {
-        state.allGreenEvents = events;
-      } else {
-        state.allYellowEvents = events;
-      }
-      localStorage.removeItem(storageKey);
+      cal.allEvents = events;
+      cal.source = { type: 'file', value: file.name };
+
+      saveCalendarConfigs(state.calendars);
       updateRefreshVisibility();
       updateShareVisibility();
       updateBannerVisibility();
-      statusEl.textContent = `${events.length} events`;
-      statusEl.className = 'load-status success';
+      if (statusEl) {
+        statusEl.textContent = `${events.length} events`;
+        statusEl.className = 'load-status success';
+      }
       loadAndRender();
     } catch (err) {
       console.error(`Failed to parse ICS file: ${err.message}`);
-      statusEl.textContent = `Error: ${err.message}`;
-      statusEl.className = 'load-status error';
+      if (statusEl) {
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.className = 'load-status error';
+      }
     }
   };
   reader.readAsText(file);
@@ -230,16 +373,18 @@ document.getElementById('year-next').addEventListener('click', () => {
 const refreshBtn = document.getElementById('refresh-btn');
 
 function updateRefreshVisibility() {
-  const hasUrls = localStorage.getItem(STORAGE_KEY_GREEN_URL) || localStorage.getItem(STORAGE_KEY_YELLOW_URL);
+  const hasUrls = state.calendars.some(c => c.source.type === 'url' && c.source.value);
   refreshBtn.hidden = !hasUrls;
 }
 
 refreshBtn.addEventListener('click', async () => {
-  const greenUrl = localStorage.getItem(STORAGE_KEY_GREEN_URL);
-  const yellowUrl = localStorage.getItem(STORAGE_KEY_YELLOW_URL);
   const fetches = [];
-  if (greenUrl) fetches.push(fetchIcsFromUrl(greenUrl, 'green'));
-  if (yellowUrl) fetches.push(fetchIcsFromUrl(yellowUrl, 'yellow'));
+  for (let i = 0; i < state.calendars.length; i++) {
+    const cal = state.calendars[i];
+    if (cal.source.type === 'url' && cal.source.value) {
+      fetches.push(fetchIcsFromUrl(cal.source.value, i));
+    }
+  }
   await Promise.all(fetches);
 });
 
@@ -250,17 +395,18 @@ const shareBtn = document.getElementById('share-btn');
 const shareStatusEl = document.getElementById('share-status');
 
 function updateShareVisibility() {
-  const hasUrls = localStorage.getItem(STORAGE_KEY_GREEN_URL) || localStorage.getItem(STORAGE_KEY_YELLOW_URL);
+  const hasUrls = state.calendars.some(c => c.source.type === 'url' && c.source.value);
   shareBtn.hidden = !hasUrls;
   if (!hasUrls) shareStatusEl.textContent = '';
 }
 
 shareBtn.addEventListener('click', async () => {
-  const greenUrl = localStorage.getItem(STORAGE_KEY_GREEN_URL);
-  const yellowUrl = localStorage.getItem(STORAGE_KEY_YELLOW_URL);
   const countryCode = localStorage.getItem(STORAGE_KEY_COUNTRY) || '';
+  const shareableCalendars = state.calendars
+    .filter(c => c.source.type === 'url' && c.source.value)
+    .map(c => ({ name: c.name, color: c.color, status: c.status, url: c.source.value }));
 
-  const hash = encodeShareHash({ countryCode, greenUrl, yellowUrl });
+  const hash = encodeShareHash({ countryCode, calendars: shareableCalendars });
   const shareUrl = `${window.location.origin}${window.location.pathname}#${hash}`;
 
   try {
@@ -270,12 +416,10 @@ shareBtn.addEventListener('click', async () => {
     prompt('Copy this link:', shareUrl);
   }
 
-  const status = buildShareStatus({
-    greenUrl,
-    yellowUrl,
-    greenHasEvents: state.allGreenEvents.length > 0,
-    yellowHasEvents: state.allYellowEvents.length > 0,
-  });
+  const fileCalendars = state.calendars.filter(c =>
+    c.source.type === 'file' && c.allEvents.length > 0
+  );
+  const status = buildShareStatus({ fileCalendarNames: fileCalendars.map(c => c.name) });
   shareStatusEl.textContent = status;
   shareStatusEl.className = 'load-status success';
 });
@@ -301,14 +445,36 @@ document.getElementById('font-up').addEventListener('click', () => {
   }
 });
 
-// Band input setup: dropdown mode switching, action buttons, file/URL inputs
-function setupBand(color) {
-  const modeSelect = document.getElementById(`${color}-mode`);
-  const urlInput = document.getElementById(`${color}-url`);
-  const fileInput = document.getElementById(`${color}-ics`);
-  const actionBtn = document.getElementById(`${color}-action`);
-  const statusEl = document.getElementById(`${color}-status`);
-  const storageKey = color === 'green' ? STORAGE_KEY_GREEN_URL : STORAGE_KEY_YELLOW_URL;
+// Calendar input setup: dropdown mode switching, action buttons, file/URL inputs
+function setupCalendar(calIndex) {
+  const cal = state.calendars[calIndex];
+  const modeSelect = document.getElementById(`cal-${calIndex}-mode`);
+  const urlInput = document.getElementById(`cal-${calIndex}-url`);
+  const fileInput = document.getElementById(`cal-${calIndex}-ics`);
+  const actionBtn = document.getElementById(`cal-${calIndex}-action`);
+  const statusEl = document.getElementById(`cal-${calIndex}-status`);
+  const nameInput = document.getElementById(`cal-${calIndex}-name`);
+  const statusSelect = document.getElementById(`cal-${calIndex}-status-type`);
+
+  if (!modeSelect) return;
+
+  // Sync name input
+  if (nameInput) {
+    nameInput.addEventListener('change', () => {
+      cal.name = nameInput.value || cal.name;
+      saveCalendarConfigs(state.calendars);
+      loadAndRender();
+    });
+  }
+
+  // Sync status (committed/possible) toggle
+  if (statusSelect) {
+    statusSelect.addEventListener('change', () => {
+      cal.status = statusSelect.value;
+      saveCalendarConfigs(state.calendars);
+      loadAndRender();
+    });
+  }
 
   function applyMode(mode) {
     if (mode === 'url') {
@@ -326,18 +492,16 @@ function setupBand(color) {
       fileInput.hidden = true;
       actionBtn.hidden = true;
       statusEl.textContent = 'Loading demo...';
-      const sampleFile = color === 'green' ? '/green-sample.ics' : '/yellow-sample.ics';
+      // Demo only available for first two calendars
+      const sampleFile = calIndex === 0 ? '/green-sample.ics' : '/yellow-sample.ics';
       fetch(sampleFile)
         .then(resp => resp.text())
         .then(icsText => {
           const resolvedText = replaceDemoYearSlugs(icsText, new Date().getFullYear());
           const events = parseICS(resolvedText);
-          if (color === 'green') {
-            state.allGreenEvents = events;
-          } else {
-            state.allYellowEvents = events;
-          }
-          localStorage.removeItem(storageKey);
+          cal.allEvents = events;
+          cal.source = { type: 'demo', value: sampleFile };
+          saveCalendarConfigs(state.calendars);
           updateRefreshVisibility();
           updateShareVisibility();
           updateBannerVisibility();
@@ -351,12 +515,10 @@ function setupBand(color) {
           updateBannerVisibility();
         });
     } else if (mode === 'clear') {
-      if (color === 'green') {
-        state.allGreenEvents = [];
-      } else {
-        state.allYellowEvents = [];
-      }
-      localStorage.removeItem(storageKey);
+      cal.allEvents = [];
+      cal.events = [];
+      cal.source = { type: 'url', value: '' };
+      saveCalendarConfigs(state.calendars);
       urlInput.value = '';
       fileInput.value = '';
       statusEl.textContent = 'Cleared';
@@ -375,7 +537,7 @@ function setupBand(color) {
   actionBtn.addEventListener('click', () => {
     if (modeSelect.value === 'url') {
       const url = urlInput.value;
-      if (url) fetchIcsFromUrl(url, color);
+      if (url) fetchIcsFromUrl(url, calIndex);
     } else if (modeSelect.value === 'file') {
       fileInput.click();
     }
@@ -384,28 +546,158 @@ function setupBand(color) {
   urlInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       const url = urlInput.value;
-      if (url) fetchIcsFromUrl(url, color);
+      if (url) fetchIcsFromUrl(url, calIndex);
     }
   });
 
   fileInput.addEventListener('change', () => {
-    if (fileInput.files[0]) handleFileUpload(fileInput.files[0], color);
+    if (fileInput.files[0]) handleFileUpload(fileInput.files[0], calIndex);
   });
 
-  // Restore saved URL from localStorage
-  const savedUrl = localStorage.getItem(storageKey);
-  if (savedUrl) {
-    urlInput.value = savedUrl;
+  // Restore saved URL from config
+  if (cal.source.type === 'url' && cal.source.value) {
+    urlInput.value = cal.source.value;
     modeSelect.value = 'url';
     applyMode('url');
-    fetchIcsFromUrl(savedUrl, color);
+    fetchIcsFromUrl(cal.source.value, calIndex);
   } else {
     applyMode('url');
   }
 }
 
-setupBand('green');
-setupBand('yellow');
+// --- Dynamic calendar list rendering ---
+const calendarListEl = document.getElementById('calendar-list');
+const addCalendarBtn = document.getElementById('add-calendar-btn');
+
+function renderCalendarRow(calIndex) {
+  const cal = state.calendars[calIndex];
+  const isDemoEligible = calIndex < 2;
+
+  const row = document.createElement('div');
+  row.className = 'upload-group calendar-row';
+  row.id = `cal-${calIndex}-row`;
+
+  const dot = document.createElement('span');
+  dot.className = 'color-dot';
+  dot.style.background = cal.color;
+  row.appendChild(dot);
+
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.id = `cal-${calIndex}-name`;
+  nameInput.className = 'cal-name-input';
+  nameInput.value = cal.name;
+  nameInput.placeholder = 'Calendar name';
+  row.appendChild(nameInput);
+
+  const statusSelect = document.createElement('select');
+  statusSelect.id = `cal-${calIndex}-status-type`;
+  statusSelect.className = 'mode-select';
+  for (const val of ['committed', 'possible']) {
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = val.charAt(0).toUpperCase() + val.slice(1);
+    if (val === cal.status) opt.selected = true;
+    statusSelect.appendChild(opt);
+  }
+  row.appendChild(statusSelect);
+
+  const modeSelect = document.createElement('select');
+  modeSelect.id = `cal-${calIndex}-mode`;
+  modeSelect.className = 'mode-select';
+  const modes = isDemoEligible
+    ? ['url', 'file', 'demo', 'clear']
+    : ['url', 'file', 'clear'];
+  for (const val of modes) {
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = val.charAt(0).toUpperCase() + val.slice(1);
+    modeSelect.appendChild(opt);
+  }
+  row.appendChild(modeSelect);
+
+  const urlInput = document.createElement('input');
+  urlInput.type = 'text';
+  urlInput.id = `cal-${calIndex}-url`;
+  urlInput.className = 'url-input';
+  urlInput.placeholder = 'webcal:// or https://';
+  row.appendChild(urlInput);
+
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.id = `cal-${calIndex}-ics`;
+  fileInput.className = 'file-input';
+  fileInput.accept = '.ics,.ical';
+  fileInput.hidden = true;
+  row.appendChild(fileInput);
+
+  const actionBtn = document.createElement('button');
+  actionBtn.id = `cal-${calIndex}-action`;
+  actionBtn.className = 'action-btn';
+  actionBtn.textContent = 'Fetch';
+  row.appendChild(actionBtn);
+
+  const statusEl = document.createElement('span');
+  statusEl.id = `cal-${calIndex}-status`;
+  statusEl.className = 'load-status';
+  row.appendChild(statusEl);
+
+  // Remove button — only if more than 2 calendars
+  if (state.calendars.length > 2) {
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'action-btn remove-cal-btn';
+    removeBtn.textContent = '×';
+    removeBtn.title = 'Remove calendar';
+    removeBtn.addEventListener('click', () => removeCalendar(calIndex));
+    row.appendChild(removeBtn);
+  }
+
+  return row;
+}
+
+function renderCalendarList() {
+  calendarListEl.innerHTML = '';
+  for (let i = 0; i < state.calendars.length; i++) {
+    calendarListEl.appendChild(renderCalendarRow(i));
+  }
+  // Wire up event handlers for each calendar row
+  for (let i = 0; i < state.calendars.length; i++) {
+    setupCalendar(i);
+  }
+  addCalendarBtn.hidden = state.calendars.length >= MAX_CALENDARS;
+  updateRefreshVisibility();
+  updateShareVisibility();
+}
+
+function addCalendar() {
+  if (state.calendars.length >= MAX_CALENDARS) return;
+  const idx = state.calendars.length;
+  state.calendars.push(createCalendar(idx));
+  saveCalendarConfigs(state.calendars);
+  renderCalendarList();
+}
+
+function removeCalendar(calIndex) {
+  if (state.calendars.length <= 2) return;
+  state.calendars.splice(calIndex, 1);
+  // Reassign colors so they stay consistent with position
+  for (let i = 0; i < state.calendars.length; i++) {
+    state.calendars[i].color = CALENDAR_COLORS[i % CALENDAR_COLORS.length];
+  }
+  saveCalendarConfigs(state.calendars);
+  renderCalendarList();
+  loadAndRender();
+}
+
+addCalendarBtn.addEventListener('click', addCalendar);
+
+// Ensure at least 2 calendars exist (default empty state)
+if (state.calendars.length === 0) {
+  state.calendars.push(createCalendar(0));
+  state.calendars.push(createCalendar(1));
+}
+
+renderCalendarList();
 
 // Country dropdown setup
 const countrySelect = document.getElementById('country-select');

@@ -11,6 +11,11 @@
       <span>Click <strong>&#x2699;</strong> in the header bar to configure your calendar &mdash; pick a country for holidays, then load your events via URL, file, or demo data.</span>
     </div>
 
+    <div id="migration-banner" class="welcome-banner no-print" hidden>
+      <button id="migration-dismiss" class="welcome-dismiss" title="Dismiss">&times;</button>
+      <span>Your calendars have been migrated to the new multi-calendar format. Open <strong>&#x2699; Settings</strong> to review.</span>
+    </div>
+
     <div id="calendar-top" class="calendar-wrapper">
       <div class="calendar-header no-print">
         <div class="year-nav">
@@ -43,39 +48,13 @@
           <label><input type="checkbox" id="include-single-day" /> Include single-day all-day events</label>
           <label><input type="checkbox" id="include-recurring" /> Include recurring all-day events</label>
         </div>
-        <div class="upload-group">
-          <span class="color-dot green"></span>
-          <label>Committed:</label>
-          <select id="green-mode" class="mode-select">
-            <option value="url">URL</option>
-            <option value="file">File</option>
-            <option value="demo">Demo</option>
-            <option value="clear">Clear</option>
-          </select>
-          <input type="text" id="green-url" placeholder="webcal:// or https://" class="url-input" />
-          <input type="file" id="green-ics" accept=".ics,.ical" class="file-input" hidden />
-          <button id="green-action" class="action-btn">Fetch</button>
-          <span id="green-status" class="load-status"></span>
-        </div>
-        <div class="upload-group">
-          <span class="color-dot yellow"></span>
-          <label>Possible:</label>
-          <select id="yellow-mode" class="mode-select">
-            <option value="url">URL</option>
-            <option value="file">File</option>
-            <option value="demo">Demo</option>
-            <option value="clear">Clear</option>
-          </select>
-          <input type="text" id="yellow-url" placeholder="webcal:// or https://" class="url-input" />
-          <input type="file" id="yellow-ics" accept=".ics,.ical" class="file-input" hidden />
-          <button id="yellow-action" class="action-btn">Fetch</button>
-          <span id="yellow-status" class="load-status"></span>
-        </div>
+        <div id="calendar-list"></div>
+        <button id="add-calendar-btn" class="action-btn add-cal-btn" title="Add a calendar (up to 6)">+ Add Calendar</button>
         <div class="upload-group">
           <button id="share-btn" class="action-btn" hidden>Share</button>
           <span id="share-status" class="load-status"></span>
         </div>
-        <p class="controls-hint">For each band, choose <strong>URL</strong> to fetch a webcal link, <strong>File</strong> to load from your device, <strong>Demo</strong> to explore with sample data, or <strong>Clear</strong> to remove events.</p>
+        <p class="controls-hint">For each calendar, choose <strong>URL</strong> to fetch a webcal link, <strong>File</strong> to load from your device, <strong>Demo</strong> to explore with sample data, or <strong>Clear</strong> to remove events.</p>
       </div>
       <div id="calendar-container"></div>
     </div>
@@ -93,12 +72,13 @@
         <dd>In settings, choose your country from the <strong>Holidays</strong> dropdown. The selection is saved and holiday data is cached locally for 30 days.</dd>
 
         <dt>Events</dt>
-        <dd>In settings, each event band has a dropdown with four options:
+        <dd>In settings, each calendar has a dropdown with four options:
           <strong>URL</strong> &mdash; enter a webcal:// or https:// calendar link and click Fetch;
           <strong>File</strong> &mdash; upload a .ics file from your computer;
           <strong>Demo</strong> &mdash; load sample data to see how the calendar looks;
           <strong>Clear</strong> &mdash; remove loaded events.
-          <strong>Committed</strong> (green) is for confirmed events; <strong>Possible</strong> (yellow) is for tentative ones.
+          Each calendar is tagged as <strong>Committed</strong> or <strong>Possible</strong> using a dropdown.
+          You can add up to 6 calendars with the <strong>+ Add Calendar</strong> button.
           URLs are saved and automatically reloaded on your next visit.</dd>
 
         <dt>Event filtering</dt>
@@ -112,7 +92,7 @@
           <span style="background:#b6d7a8; padding:0 3px">Green</span> = committed event.
           <span style="background:#ffe599; padding:0 3px">Yellow</span> = possible event.
           When green and yellow overlap, the cell is green with a yellow border.
-          <span style="color:#c62828; font-weight:bold">Bold red text in the Possible column</span> = date conflicts with a committed event.</dd>
+          The two event columns show each event with a colored dot matching its calendar.</dd>
 
         <dt>Font size</dt>
         <dd>Use <strong>A&minus;</strong> / <strong>A+</strong> in the header bar. Range: 10&ndash;24px.</dd>

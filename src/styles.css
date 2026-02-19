@@ -25,7 +25,7 @@ body {
   border-radius: 4px;
   padding: 8px 12px;
   margin-bottom: 12px;
-  font-size: 13px;
+  font-size: 0.867em;
   color: #664d03;
 }
 
@@ -37,7 +37,7 @@ body {
   background: none;
   border: 1px solid #c9a827;
   border-radius: 3px;
-  font-size: 18px;
+  font-size: 1.2em;
   line-height: 1;
   cursor: pointer;
   color: #664d03;
@@ -54,7 +54,7 @@ body {
   margin-top: 32px;
   padding-top: 16px;
   border-top: 1px solid #ccc;
-  font-size: 13px;
+  font-size: 0.867em;
   line-height: 1.5;
   max-width: 60em;
 }
@@ -80,7 +80,7 @@ body {
 
 .help-credits {
   margin-top: 12px;
-  font-size: 11px;
+  font-size: 0.733em;
   color: #888;
 }
 
@@ -89,7 +89,7 @@ body {
 }
 
 .back-to-calendar {
-  font-size: 12px;
+  font-size: 0.8em;
   color: #666;
   text-decoration: none;
   padding: 3px 10px;
@@ -106,7 +106,7 @@ body {
 
 .controls-hint {
   margin: 4px 0 0 0;
-  font-size: 11px;
+  font-size: 0.733em;
   color: #666;
 }
 
@@ -118,7 +118,7 @@ body {
 
 .upload-group label {
   font-weight: bold;
-  font-size: 12px;
+  font-size: 0.8em;
 }
 
 .upload-group .color-dot {
@@ -131,9 +131,38 @@ body {
 .upload-group .color-dot.green { background: #b6d7a8; }
 .upload-group .color-dot.yellow { background: #ffe599; }
 
+.cal-name-input {
+  font-family: inherit;
+  font-size: 0.8em;
+  padding: 2px 4px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  width: 10em;
+}
+
+.add-cal-btn {
+  margin-top: 4px;
+}
+
+.remove-cal-btn {
+  padding: 1px 6px;
+  font-size: 0.933em;
+  line-height: 1;
+  color: #888;
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.remove-cal-btn:hover {
+  color: #c00;
+  border-color: #c00;
+}
+
 .mode-select {
   font-family: inherit;
-  font-size: 12px;
+  font-size: 0.8em;
   padding: 2px 4px;
   border: 1px solid #ccc;
   border-radius: 3px;
@@ -143,19 +172,19 @@ body {
 .url-input {
   width: 26em;
   font-family: inherit;
-  font-size: 12px;
+  font-size: 0.8em;
   padding: 3px 6px;
   border: 1px solid #ccc;
   border-radius: 3px;
 }
 
 .file-input {
-  font-size: 12px;
+  font-size: 0.8em;
 }
 
 .action-btn {
   font-family: inherit;
-  font-size: 12px;
+  font-size: 0.8em;
   padding: 3px 10px;
   cursor: pointer;
   border: 1px solid #999;
@@ -168,7 +197,7 @@ body {
 }
 
 .load-status {
-  font-size: 11px;
+  font-size: 0.733em;
   color: #888;
 }
 
@@ -205,7 +234,7 @@ body {
 }
 
 .settings-btn {
-  font-size: 16px;
+  font-size: 1.067em;
   padding: 1px 6px;
   cursor: pointer;
   background: transparent;
@@ -220,7 +249,7 @@ body {
 }
 
 .help-link {
-  font-size: 14px;
+  font-size: 0.933em;
   padding: 1px 7px;
   cursor: pointer;
   background: transparent;
@@ -264,14 +293,14 @@ body {
 
 .settings-panel-title {
   font-weight: bold;
-  font-size: 13px;
+  font-size: 0.867em;
 }
 
 .settings-close {
   background: none;
   border: 1px solid #ccc;
   border-radius: 3px;
-  font-size: 16px;
+  font-size: 1.067em;
   line-height: 1;
   cursor: pointer;
   color: #666;
@@ -289,7 +318,7 @@ body {
 }
 
 .year-nav button {
-  font-size: 14px;
+  font-size: 0.933em;
   padding: 1px 7px;
   cursor: pointer;
   background: transparent;
@@ -304,14 +333,14 @@ body {
 }
 
 .year-nav span {
-  font-size: 15px;
+  font-size: 1em;
   font-weight: bold;
   min-width: 3.5em;
   text-align: center;
 }
 
 .refresh-btn {
-  font-size: 15px;
+  font-size: 1em;
   padding: 1px 6px;
   cursor: pointer;
   background: transparent;
@@ -333,7 +362,7 @@ body {
 }
 
 .font-controls button {
-  font-size: 12px;
+  font-size: 0.8em;
   padding: 1px 6px;
   cursor: pointer;
   font-family: inherit;
@@ -348,7 +377,7 @@ body {
 }
 
 .font-controls span {
-  font-size: 11px;
+  font-size: 0.733em;
   color: rgba(255,255,255,0.7);
   min-width: 3.5em;
   text-align: center;
@@ -374,7 +403,7 @@ body {
   background: #666;
   color: #fff;
   font-weight: bold;
-  font-size: 12px;
+  font-size: 0.8em;
 }
 
 .compact-calendar thead th.weekend-header {
@@ -398,17 +427,7 @@ body {
   width: 2em;
 }
 
-.col-event-what {
-  width: 16em;
-  text-align: left;
-}
-
-.col-event-date {
-  width: 4.5em;
-  text-align: center;
-}
-
-/* Spacer column between day grid and event bands */
+/* Spacer column between day grid and event columns */
 .spacer {
   width: 8px;
   border: none !important;
@@ -445,119 +464,188 @@ body {
   background: #f5f5f5;
 }
 
-/* Green event highlighting */
-.day.green-event {
+/* Committed (green) event highlighting */
+.day.committed-event {
   background: #b6d7a8;
 }
 
-/* Yellow event highlighting */
-.day.yellow-event {
+/* Possible (yellow) event highlighting */
+.day.possible-event {
   background: #ffe599;
 }
 
-/* Green + yellow overlap: green background, yellow box border */
-.day.green-event.yellow-event {
+/* Committed + possible overlap: green background, yellow box border */
+.day.committed-event.possible-event {
   background: #b6d7a8;
   color: #222;
   border: 3px solid #e6a800;
 }
 
-/* Green event on first-day: green wins */
-.day.first-day.green-event {
+/* Committed event on first-day: green wins */
+.day.first-day.committed-event {
   background: #b6d7a8;
   color: #fff;
 }
 
-/* Yellow event on first-day: yellow wins */
-.day.first-day.yellow-event {
+/* Possible event on first-day: yellow wins */
+.day.first-day.possible-event {
   background: #ffe599;
   color: #222;
 }
 
-/* Weekend + green event: green background, grey text */
-.day.weekend.green-event {
+/* Weekend + committed event: green background, grey text */
+.day.weekend.committed-event {
   background: #c8e6b8;
   color: #999;
 }
 
-/* Weekend + yellow event: yellow background, grey text */
-.day.weekend.yellow-event {
+/* Weekend + possible event: yellow background, grey text */
+.day.weekend.possible-event {
   background: #fff0b3;
   color: #999;
 }
 
-/* Holiday + green event: red text, green background */
-.day.holiday.green-event {
+/* Holiday + committed event: red text, green background */
+.day.holiday.committed-event {
   background: #b6d7a8;
   color: #cc0000;
 }
 
-/* Holiday + yellow event: red text, yellow background */
-.day.holiday.yellow-event {
+/* Holiday + possible event: red text, yellow background */
+.day.holiday.possible-event {
   background: #ffe599;
   color: #cc0000;
 }
 
-/* Green + yellow + holiday: red text wins, green background wins, yellow box */
-.day.holiday.green-event.yellow-event {
+/* Committed + possible + holiday: red text wins, green background wins, yellow box */
+.day.holiday.committed-event.possible-event {
   background: #b6d7a8;
   color: #cc0000;
   border: 3px solid #e6a800;
 }
 
 /* Weekend holiday + event: muted red text, lighter event background */
-.day.weekend-holiday.green-event {
+.day.weekend-holiday.committed-event {
   background: #c8e6b8;
   color: #cc777a;
 }
 
-.day.weekend-holiday.yellow-event {
+.day.weekend-holiday.possible-event {
   background: #fff0b3;
   color: #cc777a;
 }
 
-/* Weekend + green + yellow overlap: green wins background, grey text, yellow box */
-.day.weekend.green-event.yellow-event {
+/* Weekend + committed + possible overlap: green wins background, grey text, yellow box */
+.day.weekend.committed-event.possible-event {
   background: #c8e6b8;
   color: #999;
   border: 3px solid #e6a800;
 }
 
-/* Weekend holiday + green + yellow: green wins, muted red text, yellow box */
-.day.weekend-holiday.green-event.yellow-event {
+/* Weekend holiday + committed + possible: green wins, muted red text, yellow box */
+.day.weekend-holiday.committed-event.possible-event {
   background: #c8e6b8;
   color: #cc777a;
   border: 3px solid #e6a800;
 }
 
-/* --- Event band cells --- */
-.green-band {
-  background: #e8f5e2;
-  text-align: left;
+/* --- Event columns --- */
+.col-events-header {
+  text-align: left !important;
+  padding-left: 36px;
+  width: 20.5em;
 }
 
-.yellow-band {
-  background: #fef9e7;
-  text-align: left;
-}
-
-.event-what {
-  text-align: left;
-  font-size: 12px;
-  max-width: 16em;
+.events-col {
+  text-align: left !important;
+  font-size: 0.8em;
+  padding-left: 8px !important;
+  vertical-align: top !important;
+  width: 20.5em;
+  max-width: 20.5em;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.event-date {
-  text-align: center;
-  font-size: 12px;
+.event-chip {
+  white-space: nowrap;
 }
 
-/* Conflict indicator: yellow event dates that overlap with a committed (green) event */
-.event-date.conflict {
-  color: #cc0000;
+.event-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* Compact badge for overflow count */
+.event-more {
+  display: inline-block;
+  width: 22px;
+  text-align: center;
+  font-size: 0.833em;
+  color: #fff;
+  background: #888;
+  border-radius: 8px;
+  padding: 0 2px;
+  cursor: pointer;
+  user-select: none;
   font-weight: bold;
+  line-height: 1.5;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+/* Empty placeholder — same width as badge, keeps dots aligned */
+.event-badge-spacer {
+  display: inline-block;
+  width: 28px;
+}
+
+.event-more:hover {
+  background: #555;
+}
+
+/* Overflow container — hidden by default, indented to align with first event */
+.event-overflow {
+  display: none;
+  padding-top: 1px;
+  margin-left: 28px;
+}
+
+.event-overflow .event-chip {
+  display: block;
+}
+
+/* Continuation weeks — entire chip dimmed */
+.event-chip.continuation-dim {
+  color: #aaa;
+}
+
+/* Legend bar */
+.calendar-legend {
+  display: flex;
+  gap: 14px;
+  padding: 6px 8px;
+  background: #f5f5f5;
+  border-bottom: 1px solid #ccc;
+  font-size: 0.8em;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
 }
 
 /* --- Holiday reference list --- */
@@ -590,7 +678,7 @@ body {
 
   body {
     padding: 0;
-    font-size: 11px;
+    font-size: 0.733em;
   }
 
   .compact-calendar th,
