@@ -1,9 +1,9 @@
 // ABOUTME: Renders the compact calendar as an HTML table with two event columns (Committed, Possible).
 // ABOUTME: Exports renderCalendar() and pure logic functions for conflict detection and date formatting.
 
-// 6-calendar color palette — must match main.js CALENDAR_COLORS
+// 6-calendar color palette (Okabe-Ito CVD-safe) — must match main.js CALENDAR_COLORS
 const CALENDAR_COLORS = [
-  '#1a60a8', '#c75400', '#7b1fa2', '#00796b', '#b5145a', '#827717',
+  '#0072B2', '#E69F00', '#009E73', '#CC79A7', '#785EF0', '#D55E00',
 ];
 
 function dateKey(y, m, d) {
@@ -93,7 +93,7 @@ export function detectConflicts(possibleEvents, committedEvents) {
  * Square for committed calendars, circle for possible.
  * Continuations (event started before this week) get dimmed styling.
  */
-function makeNameChip(event, calColor, calStatus, startsThisWeek) {
+function makeNameChip(event, calColor, calStatus, startsThisWeek, calName) {
   const chip = document.createElement('span');
   chip.className = 'event-chip';
   if (!startsThisWeek) chip.classList.add('continuation-dim');
@@ -101,10 +101,12 @@ function makeNameChip(event, calColor, calStatus, startsThisWeek) {
   const dot = document.createElement('span');
   dot.className = 'event-dot ' + calStatus;
   dot.style.background = calColor;
+  dot.setAttribute('aria-hidden', 'true');
   chip.appendChild(dot);
 
   const text = document.createTextNode(event.summary);
   chip.appendChild(text);
+  chip.setAttribute('aria-label', `${event.summary}, ${calName} (${calStatus})`);
   return chip;
 }
 
@@ -146,10 +148,14 @@ function toggleMore(btn) {
   if (collapsed) {
     btn.textContent = '▾';
     btn.title = 'Collapse';
+    btn.setAttribute('aria-expanded', 'true');
+    btn.setAttribute('aria-label', 'Collapse events');
   } else {
     const count = overflows[0].children.length;
     btn.textContent = '▸';
     btn.title = count + ' more event' + (count > 1 ? 's' : '');
+    btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-label', count + ' more event' + (count > 1 ? 's' : ''));
   }
 }
 
@@ -167,7 +173,7 @@ function fillEventsCells(spacerCell, nameCell, startCell, endCell, eventEntries)
 
   const first = eventEntries[0];
   if (eventEntries.length === 1) {
-    nameCell.appendChild(makeNameChip(first.event, first.calColor, first.calStatus, first.startsThisWeek));
+    nameCell.appendChild(makeNameChip(first.event, first.calColor, first.calStatus, first.startsThisWeek, first.calName));
     const dates = makeDateChips(first.event, first.startsThisWeek);
     startCell.appendChild(dates.startChip);
     endCell.appendChild(dates.endChip);
@@ -176,15 +182,17 @@ function fillEventsCells(spacerCell, nameCell, startCell, endCell, eventEntries)
     const cellId = 'evt-' + (cellIdCounter++);
     nameCell.id = cellId;
 
-    const moreBtn = document.createElement('span');
+    const moreBtn = document.createElement('button');
     moreBtn.className = 'event-more';
     moreBtn.textContent = '▸';
     moreBtn.dataset.target = cellId;
+    moreBtn.setAttribute('aria-expanded', 'false');
+    moreBtn.setAttribute('aria-label', (eventEntries.length - 1) + ' more event' + (eventEntries.length - 1 > 1 ? 's' : ''));
     moreBtn.title = (eventEntries.length - 1) + ' more event' + (eventEntries.length - 1 > 1 ? 's' : '');
     moreBtn.addEventListener('click', function () { toggleMore(this); });
     spacerCell.appendChild(moreBtn);
 
-    nameCell.appendChild(makeNameChip(first.event, first.calColor, first.calStatus, first.startsThisWeek));
+    nameCell.appendChild(makeNameChip(first.event, first.calColor, first.calStatus, first.startsThisWeek, first.calName));
     const firstDates = makeDateChips(first.event, first.startsThisWeek);
     startCell.appendChild(firstDates.startChip);
     endCell.appendChild(firstDates.endChip);
@@ -200,7 +208,7 @@ function fillEventsCells(spacerCell, nameCell, startCell, endCell, eventEntries)
     endOverflow.style.display = 'none';
     for (let i = 1; i < eventEntries.length; i++) {
       const e = eventEntries[i];
-      nameOverflow.appendChild(makeNameChip(e.event, e.calColor, e.calStatus, e.startsThisWeek));
+      nameOverflow.appendChild(makeNameChip(e.event, e.calColor, e.calStatus, e.startsThisWeek, e.calName));
       const dates = makeDateChips(e.event, e.startsThisWeek);
       startOverflow.appendChild(dates.startChip);
       endOverflow.appendChild(dates.endChip);
@@ -250,10 +258,12 @@ export function renderCalendar(container, { weeks, holidays, calendars, year }) 
     const dot = document.createElement('span');
     dot.className = 'legend-dot ' + cal.status;
     dot.style.background = cal.color;
+    dot.setAttribute('aria-hidden', 'true');
     item.appendChild(dot);
     const label = document.createElement('span');
     label.textContent = cal.name;
     item.appendChild(label);
+    item.setAttribute('aria-label', `${cal.name} (${cal.status})`);
     legend.appendChild(item);
   }
 
@@ -276,6 +286,7 @@ export function renderCalendar(container, { weeks, holidays, calendars, year }) 
     const swatch = document.createElement('span');
     swatch.className = key.className;
     if (key.bg) swatch.style.background = key.bg;
+    swatch.setAttribute('aria-hidden', 'true');
     item.appendChild(swatch);
     const label = document.createElement('span');
     label.textContent = key.text;
@@ -368,7 +379,7 @@ export function renderCalendar(container, { weeks, holidays, calendars, year }) 
         const eEnd = localDateNum(event.endDate);
         if (eStart <= weekSundayNum && eEnd >= weekMondayNum) {
           const startsThisWeek = eStart >= weekMondayNum && eStart <= weekSundayNum;
-          const entry = { event, calColor: cal.color, calStatus: cal.status, startsThisWeek };
+          const entry = { event, calColor: cal.color, calStatus: cal.status, calName: cal.name, startsThisWeek };
           if (cal.status === 'committed') {
             committedEntries.push(entry);
           } else {
@@ -428,10 +439,15 @@ export function renderCalendar(container, { weeks, holidays, calendars, year }) 
     const toggle = document.createElement('button');
     toggle.className = 'holiday-toggle';
     toggle.textContent = `▸ Public Holidays ${year}`;
+    toggle.setAttribute('aria-expanded', 'false');
+
+    const listId = 'holiday-list-' + year;
     section.appendChild(toggle);
 
     const list = document.createElement('ul');
+    list.id = listId;
     list.hidden = true;
+    toggle.setAttribute('aria-controls', listId);
     const sorted = [...holidays].sort((a, b) => a.date - b.date);
     for (const h of sorted) {
       const li = document.createElement('li');
@@ -446,6 +462,7 @@ export function renderCalendar(container, { weeks, holidays, calendars, year }) 
     toggle.addEventListener('click', () => {
       list.hidden = !list.hidden;
       toggle.textContent = (list.hidden ? '▸' : '▾') + ` Public Holidays ${year}`;
+      toggle.setAttribute('aria-expanded', String(!list.hidden));
     });
 
     container.appendChild(section);

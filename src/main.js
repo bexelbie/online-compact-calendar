@@ -15,23 +15,38 @@ const STORAGE_KEY_CALENDARS = 'compact-cal-calendars';
 const STORAGE_KEY_COUNTRY = 'compact-cal-country';
 const STORAGE_KEY_INCLUDE_SINGLE_DAY = 'compact-cal-include-single-day';
 const STORAGE_KEY_INCLUDE_RECURRING = 'compact-cal-include-recurring';
+const STORAGE_KEY_HIGH_CONTRAST = 'compact-cal-high-contrast';
 const STORAGE_KEY_MIGRATED = 'compact-cal-migrated';
 
 // Old format keys — used only for migration detection
 const LEGACY_KEY_GREEN_URL = 'compact-cal-green-url';
 const LEGACY_KEY_YELLOW_URL = 'compact-cal-yellow-url';
 
-// 6-calendar color palette
+// 6-calendar color palette (Okabe-Ito CVD-safe)
 export const CALENDAR_COLORS = [
-  '#1a60a8', // Blue
-  '#c75400', // Orange
-  '#7b1fa2', // Purple
-  '#00796b', // Teal
-  '#b5145a', // Magenta
-  '#827717', // Olive
+  '#0072B2', // Blue
+  '#E69F00', // Amber
+  '#009E73', // Teal
+  '#CC79A7', // Muted Pink
+  '#785EF0', // Indigo
+  '#D55E00', // Vermilion
 ];
 
 const MAX_CALENDARS = 6;
+
+// Map old palette hex values to new CVD-safe palette by position
+const LEGACY_COLOR_MAP = {
+  '#1a60a8': CALENDAR_COLORS[0],
+  '#c75400': CALENDAR_COLORS[1],
+  '#7b1fa2': CALENDAR_COLORS[2],
+  '#00796b': CALENDAR_COLORS[3],
+  '#b5145a': CALENDAR_COLORS[4],
+  '#827717': CALENDAR_COLORS[5],
+};
+
+function migrateColor(color) {
+  return LEGACY_COLOR_MAP[color?.toLowerCase()] || color;
+}
 
 function createCalendar(index, overrides = {}) {
   const defaults = {
@@ -97,7 +112,10 @@ function loadCalendarConfigs() {
   if (!raw) return null;
   try {
     const configs = JSON.parse(raw);
-    return configs.map((cfg, i) => createCalendar(i, cfg));
+    return configs.map((cfg, i) => {
+      cfg.color = migrateColor(cfg.color);
+      return createCalendar(i, cfg);
+    });
   } catch {
     return null;
   }
@@ -134,7 +152,7 @@ if (shareHash) {
         // New format share link
         initialCalendars = shareConfig.calendars.map((cfg, i) => createCalendar(i, {
           name: cfg.name,
-          color: cfg.color,
+          color: migrateColor(cfg.color),
           status: cfg.status,
           source: { type: 'url', value: cfg.url },
         }));
@@ -220,32 +238,72 @@ const settingsClose = document.getElementById('settings-close');
 
 function toggleSettings() {
   settingsPanel.hidden = !settingsPanel.hidden;
+  settingsBtn.setAttribute('aria-expanded', String(!settingsPanel.hidden));
 }
 
 settingsBtn.addEventListener('click', toggleSettings);
 settingsClose.addEventListener('click', () => { settingsPanel.hidden = true; });
 
-// Help modal toggle
+// Help modal toggle with focus management
 const helpOverlay = document.getElementById('help-overlay');
 const helpBtn = document.getElementById('help-btn');
 const helpClose = document.getElementById('help-close');
 
-helpBtn.addEventListener('click', () => { helpOverlay.hidden = false; });
-helpClose.addEventListener('click', () => { helpOverlay.hidden = true; });
+function openHelpModal() {
+  helpOverlay.hidden = false;
+  helpBtn.setAttribute('aria-expanded', 'true');
+  // Focus the close button when modal opens
+  helpClose.focus();
+}
+
+function closeHelpModal() {
+  helpOverlay.hidden = true;
+  helpBtn.setAttribute('aria-expanded', 'false');
+  // Restore focus to the trigger button
+  helpBtn.focus();
+}
+
+helpBtn.addEventListener('click', openHelpModal);
+helpClose.addEventListener('click', closeHelpModal);
 helpOverlay.addEventListener('click', (e) => {
-  if (e.target === helpOverlay) helpOverlay.hidden = true;
+  if (e.target === helpOverlay) closeHelpModal();
+});
+
+// Focus trap inside help modal
+helpOverlay.addEventListener('keydown', (e) => {
+  if (e.key !== 'Tab') return;
+  const modal = helpOverlay.querySelector('.help-modal');
+  const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  if (focusable.length === 0) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (e.shiftKey) {
+    if (document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    }
+  } else {
+    if (document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
 });
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    if (!helpOverlay.hidden) helpOverlay.hidden = true;
-    else if (!settingsPanel.hidden) settingsPanel.hidden = true;
+    if (!helpOverlay.hidden) closeHelpModal();
+    else if (!settingsPanel.hidden) {
+      settingsPanel.hidden = true;
+      settingsBtn.setAttribute('aria-expanded', 'false');
+    }
   }
 });
 
 document.addEventListener('click', (e) => {
   if (!settingsPanel.hidden && !settingsPanel.contains(e.target) && e.target !== settingsBtn) {
     settingsPanel.hidden = true;
+    settingsBtn.setAttribute('aria-expanded', 'false');
   }
 });
 
@@ -609,11 +667,13 @@ function renderCalendarRow(calIndex) {
   nameInput.className = 'cal-name-input';
   nameInput.value = cal.name;
   nameInput.placeholder = 'Calendar name';
+  nameInput.setAttribute('aria-label', `Calendar ${calIndex + 1} name`);
   row.appendChild(nameInput);
 
   const statusSelect = document.createElement('select');
   statusSelect.id = `cal-${calIndex}-status-type`;
   statusSelect.className = 'mode-select';
+  statusSelect.setAttribute('aria-label', `Calendar ${calIndex + 1} type`);
   for (const val of ['committed', 'possible']) {
     const opt = document.createElement('option');
     opt.value = val;
@@ -626,6 +686,7 @@ function renderCalendarRow(calIndex) {
   const modeSelect = document.createElement('select');
   modeSelect.id = `cal-${calIndex}-mode`;
   modeSelect.className = 'mode-select';
+  modeSelect.setAttribute('aria-label', `Calendar ${calIndex + 1} source`);
   const modes = isDemoEligible
     ? ['url', 'file', 'demo', 'clear']
     : ['url', 'file', 'clear'];
@@ -642,6 +703,7 @@ function renderCalendarRow(calIndex) {
   urlInput.id = `cal-${calIndex}-url`;
   urlInput.className = 'url-input';
   urlInput.placeholder = 'webcal:// or https://';
+  urlInput.setAttribute('aria-label', `Calendar ${calIndex + 1} URL`);
   row.appendChild(urlInput);
 
   const fileInput = document.createElement('input');
@@ -669,6 +731,7 @@ function renderCalendarRow(calIndex) {
     removeBtn.className = 'action-btn remove-cal-btn';
     removeBtn.textContent = '×';
     removeBtn.title = 'Remove calendar';
+    removeBtn.setAttribute('aria-label', `Remove calendar ${cal.name}`);
     removeBtn.addEventListener('click', () => removeCalendar(calIndex));
     row.appendChild(removeBtn);
   }
@@ -774,6 +837,24 @@ includeRecurringCheckbox.addEventListener('change', () => {
   state.includeRecurring = includeRecurringCheckbox.checked;
   localStorage.setItem(STORAGE_KEY_INCLUDE_RECURRING, String(state.includeRecurring));
   loadAndRender();
+});
+
+// High-contrast grid toggle
+const highContrastCheckbox = document.getElementById('high-contrast-grid');
+const highContrastEnabled = localStorage.getItem(STORAGE_KEY_HIGH_CONTRAST) === 'true';
+highContrastCheckbox.checked = highContrastEnabled;
+if (highContrastEnabled) {
+  document.documentElement.setAttribute('data-grid-contrast', 'high');
+}
+
+highContrastCheckbox.addEventListener('change', () => {
+  const enabled = highContrastCheckbox.checked;
+  localStorage.setItem(STORAGE_KEY_HIGH_CONTRAST, String(enabled));
+  if (enabled) {
+    document.documentElement.setAttribute('data-grid-contrast', 'high');
+  } else {
+    document.documentElement.removeAttribute('data-grid-contrast');
+  }
 });
 
 // Display app version in credits

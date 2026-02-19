@@ -7,46 +7,47 @@
   </head>
   <body>
     <div id="welcome-banner" class="welcome-banner no-print">
-      <button id="welcome-dismiss" class="welcome-dismiss" title="Dismiss">&times;</button>
+      <button id="welcome-dismiss" class="welcome-dismiss" title="Dismiss" aria-label="Dismiss welcome message">&times;</button>
       <span>Click <strong>&#x2699;</strong> in the header bar to configure your calendar &mdash; pick a country for holidays, then load your events via URL, file, or demo data.</span>
     </div>
 
     <div id="migration-banner" class="welcome-banner no-print" hidden>
-      <button id="migration-dismiss" class="welcome-dismiss" title="Dismiss">&times;</button>
+      <button id="migration-dismiss" class="welcome-dismiss" title="Dismiss" aria-label="Dismiss migration notice">&times;</button>
       <span>Your calendars have been migrated to the new multi-calendar format. Open <strong>&#x2699; Settings</strong> to review.</span>
     </div>
 
     <div id="calendar-top" class="calendar-wrapper">
       <div class="calendar-header no-print">
         <div class="year-nav">
-          <button id="year-prev">&lt;</button>
+          <button id="year-prev" aria-label="Previous year">&lt;</button>
           <span id="year-display"></span>
-          <button id="year-next">&gt;</button>
-          <button id="refresh-btn" class="refresh-btn" title="Refresh calendar URLs" hidden>&#x21bb;</button>
+          <button id="year-next" aria-label="Next year">&gt;</button>
+          <button id="refresh-btn" class="refresh-btn" title="Refresh calendar URLs" aria-label="Reload calendars" hidden>&#x21bb;</button>
         </div>
         <div class="header-right">
-          <button id="settings-btn" class="settings-btn" title="Settings">&#x2699;</button>
-          <button id="help-btn" class="help-link" title="Help">?</button>
+          <button id="settings-btn" class="settings-btn" title="Settings" aria-label="Settings" aria-expanded="false">&#x2699;</button>
+          <button id="help-btn" class="help-link" title="Help" aria-label="Help" aria-expanded="false">?</button>
           <div class="font-controls">
-            <button id="font-down">A&minus;</button>
+            <button id="font-down" aria-label="Decrease font size">A&minus;</button>
             <span id="font-size-display"></span>
-            <button id="font-up">A+</button>
+            <button id="font-up" aria-label="Increase font size">A+</button>
           </div>
         </div>
       </div>
       <div id="settings-panel" class="settings-panel no-print" hidden>
         <div class="settings-panel-header">
           <span class="settings-panel-title">Settings</span>
-          <button id="settings-close" class="settings-close" title="Close">&times;</button>
+          <button id="settings-close" class="settings-close" title="Close" aria-label="Close settings">&times;</button>
         </div>
         <div class="upload-group">
-          <label>Holidays:</label>
+          <label for="country-select">Holidays:</label>
           <select id="country-select" class="mode-select"></select>
           <span id="country-status" class="load-status"></span>
         </div>
         <div class="upload-group">
           <label><input type="checkbox" id="include-single-day" /> Include single-day all-day events</label>
           <label><input type="checkbox" id="include-recurring" /> Include recurring all-day events</label>
+          <label><input type="checkbox" id="high-contrast-grid" /> High contrast grid (color-blind friendly)</label>
         </div>
         <div id="calendar-list"></div>
         <button id="add-calendar-btn" class="action-btn add-cal-btn" title="Add a calendar (up to 6)">+ Add Calendar</button>
@@ -60,11 +61,11 @@
       <p class="help-credits">Calendar layout inspired by <a href="https://davidseah.com/node/compact-calendar/" target="_blank" rel="noopener">DSri Seah's Compact Calendar</a> &middot; Built by <a href="https://www.bexelbie.com" target="_blank" rel="noopener">Brian "bex" Exelbierd</a> &middot; <a href="https://github.com/bexelbie/online-compact-calendar" target="_blank" rel="noopener">GitHub</a> &middot; <a href="https://github.com/bexelbie/online-compact-calendar/issues" target="_blank" rel="noopener">Feedback &amp; ideas</a> &middot; <span id="app-version" class="app-version"></span></p>
     </div>
 
-    <div id="help-overlay" class="help-overlay no-print" hidden>
+    <div id="help-overlay" class="help-overlay no-print" hidden role="dialog" aria-modal="true" aria-labelledby="help-modal-title">
       <div class="help-modal">
         <div class="help-modal-header">
-          <h2>Help</h2>
-          <button id="help-close" class="settings-close" title="Close">&times;</button>
+          <h2 id="help-modal-title">Help</h2>
+          <button id="help-close" class="settings-close" title="Close" aria-label="Close help">&times;</button>
         </div>
         <div class="help-modal-body">
       <dl>
@@ -99,7 +100,8 @@
           <span style="background:#dde3f0; padding:0 3px">Blue background</span> = first of the month.
           <span style="background:#b6d7a8; padding:0 3px">Green</span> = committed event day.
           <span style="background:#ffe599; padding:0 3px">Yellow</span> = possible event day.
-          <span style="background:#b6d7a8; border:2px solid #e6a800; padding:0 3px">Green + yellow border</span> = both committed and possible events overlap on that day.</dd>
+          <span style="background:#b6d7a8; border:2px solid #e6a800; padding:0 3px">Green + yellow border</span> = both committed and possible events overlap on that day.
+          Enable <strong>High contrast grid</strong> in settings for a color-blind friendly palette with added border cues.</dd>
 
         <dt>Reading the event columns</dt>
         <dd>Two columns beside the grid list events active each week: <strong>Committed</strong> and <strong>Possible</strong>.
@@ -112,6 +114,9 @@
 
         <dt>Printing</dt>
         <dd>All controls and this help section are hidden when you print. Colors are preserved.</dd>
+
+        <dt>Accessibility</dt>
+        <dd>Calendar colors use a CVD-safe (color-blind friendly) palette. Event types are distinguished by shape: <strong>&#x25A0; square</strong> for committed, <strong>&#x25CF; circle</strong> for possible. The <strong>High contrast grid</strong> option in settings replaces the default green/yellow/red grid colors with higher-contrast alternatives and adds border cues. All interactive elements are keyboard-accessible.</dd>
 
         <dt>Sharing</dt>
         <dd>When you have URL-based calendars loaded, a <strong>Share</strong> button appears in settings. Click it to copy a link that pre-configures the app with your calendar URLs, names, colors, and country. The link encodes your settings in the URL fragment (<code>#</code>), which never leaves your browser &mdash; it is not sent to any server. If you also have a file-based calendar loaded, you&rsquo;ll need to share that file separately.</dd>

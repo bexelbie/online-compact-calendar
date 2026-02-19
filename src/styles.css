@@ -1,6 +1,48 @@
 /* ABOUTME: Styles for the compact calendar grid, event bands, and print layout. */
 /* ABOUTME: Defines color rules for holidays, weekends, first-of-month, and event highlighting. */
 
+/* CSS custom properties for grid colors — enables high-contrast toggle */
+:root {
+  --grid-committed-bg: #b6d7a8;
+  --grid-committed-weekend-bg: #c8e6b8;
+  --grid-possible-bg: #ffe599;
+  --grid-possible-weekend-bg: #fff0b3;
+  --grid-overlap-border: #e6a800;
+  --grid-holiday-color: #cc0000;
+  --grid-holiday-weekend-color: #cc777a;
+  --grid-first-day-bg: #4a86c8;
+  --grid-weekend-bg: #f5f5f5;
+  --grid-committed-swatch: #b6d7a8;
+  --grid-possible-swatch: #ffe599;
+}
+
+[data-grid-contrast="high"] {
+  --grid-committed-bg: #d2e3ff;
+  --grid-committed-weekend-bg: #c5d9f5;
+  --grid-possible-bg: #fff8e1;
+  --grid-possible-weekend-bg: #f5edcf;
+  --grid-overlap-border: #222;
+  --grid-holiday-color: #b5145a;
+  --grid-holiday-weekend-color: #c27090;
+  --grid-first-day-bg: #1a4fa3;
+  --grid-committed-swatch: #d2e3ff;
+  --grid-possible-swatch: #fff8e1;
+}
+
+/* High-contrast mode adds border cues so color isn't the only signal */
+[data-grid-contrast="high"] .day.committed-event {
+  border-left: 3px solid #0072B2;
+}
+
+[data-grid-contrast="high"] .day.possible-event {
+  border-left: 3px dashed #E69F00;
+}
+
+[data-grid-contrast="high"] .day.committed-event.possible-event {
+  border-left: 3px solid #0072B2;
+  border: 3px dashed var(--grid-overlap-border);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -486,7 +528,7 @@ body {
 
 /* First day of month: blue background */
 .day.first-day {
-  background: #4a86c8;
+  background: var(--grid-first-day-bg);
   color: #fff;
   font-weight: bold;
 }
@@ -494,105 +536,105 @@ body {
 /* Weekend: grey text */
 .day.weekend {
   color: #999;
-  background: #f5f5f5;
+  background: var(--grid-weekend-bg);
 }
 
 /* Holiday on weekday: red text */
 .day.holiday {
-  color: #cc0000;
+  color: var(--grid-holiday-color);
   font-weight: bold;
 }
 
 /* Holiday on weekend: muted red text, weekend background unchanged */
 .day.weekend-holiday {
-  color: #cc777a;
+  color: var(--grid-holiday-weekend-color);
   font-weight: bold;
-  background: #f5f5f5;
+  background: var(--grid-weekend-bg);
 }
 
 /* Committed (green) event highlighting */
 .day.committed-event {
-  background: #b6d7a8;
+  background: var(--grid-committed-bg);
 }
 
 /* Possible (yellow) event highlighting */
 .day.possible-event {
-  background: #ffe599;
+  background: var(--grid-possible-bg);
 }
 
 /* Committed + possible overlap: green background, yellow box border */
 .day.committed-event.possible-event {
-  background: #b6d7a8;
+  background: var(--grid-committed-bg);
   color: #222;
-  border: 3px solid #e6a800;
+  border: 3px solid var(--grid-overlap-border);
 }
 
 /* Committed event on first-day: green wins */
 .day.first-day.committed-event {
-  background: #b6d7a8;
+  background: var(--grid-committed-bg);
   color: #fff;
 }
 
 /* Possible event on first-day: yellow wins */
 .day.first-day.possible-event {
-  background: #ffe599;
+  background: var(--grid-possible-bg);
   color: #222;
 }
 
 /* Weekend + committed event: green background, grey text */
 .day.weekend.committed-event {
-  background: #c8e6b8;
+  background: var(--grid-committed-weekend-bg);
   color: #999;
 }
 
 /* Weekend + possible event: yellow background, grey text */
 .day.weekend.possible-event {
-  background: #fff0b3;
+  background: var(--grid-possible-weekend-bg);
   color: #999;
 }
 
 /* Holiday + committed event: red text, green background */
 .day.holiday.committed-event {
-  background: #b6d7a8;
-  color: #cc0000;
+  background: var(--grid-committed-bg);
+  color: var(--grid-holiday-color);
 }
 
 /* Holiday + possible event: red text, yellow background */
 .day.holiday.possible-event {
-  background: #ffe599;
-  color: #cc0000;
+  background: var(--grid-possible-bg);
+  color: var(--grid-holiday-color);
 }
 
 /* Committed + possible + holiday: red text wins, green background wins, yellow box */
 .day.holiday.committed-event.possible-event {
-  background: #b6d7a8;
-  color: #cc0000;
-  border: 3px solid #e6a800;
+  background: var(--grid-committed-bg);
+  color: var(--grid-holiday-color);
+  border: 3px solid var(--grid-overlap-border);
 }
 
 /* Weekend holiday + event: muted red text, lighter event background */
 .day.weekend-holiday.committed-event {
-  background: #c8e6b8;
-  color: #cc777a;
+  background: var(--grid-committed-weekend-bg);
+  color: var(--grid-holiday-weekend-color);
 }
 
 .day.weekend-holiday.possible-event {
-  background: #fff0b3;
-  color: #cc777a;
+  background: var(--grid-possible-weekend-bg);
+  color: var(--grid-holiday-weekend-color);
 }
 
 /* Weekend + committed + possible overlap: green wins background, grey text, yellow box */
 .day.weekend.committed-event.possible-event {
-  background: #c8e6b8;
+  background: var(--grid-committed-weekend-bg);
   color: #999;
-  border: 3px solid #e6a800;
+  border: 3px solid var(--grid-overlap-border);
 }
 
 /* Weekend holiday + committed + possible: green wins, muted red text, yellow box */
 .day.weekend-holiday.committed-event.possible-event {
-  background: #c8e6b8;
-  color: #cc777a;
-  border: 3px solid #e6a800;
+  background: var(--grid-committed-weekend-bg);
+  color: var(--grid-holiday-weekend-color);
+  border: 3px solid var(--grid-overlap-border);
 }
 
 /* --- Event columns --- */
@@ -654,6 +696,11 @@ body {
   user-select: none;
   color: #666;
   font-size: 1em;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  line-height: inherit;
 }
 
 .event-more:hover {
@@ -738,7 +785,7 @@ body {
 
 .holiday-swatch {
   background: #f0f0f0;
-  color: #cc0000;
+  color: var(--grid-holiday-color);
 }
 
 .holiday-swatch::after { content: '1'; }
@@ -751,16 +798,16 @@ body {
 .first-day-swatch::after { content: '1'; }
 
 .committed-swatch {
-  background: #b6d7a8;
+  background: var(--grid-committed-swatch);
 }
 
 .possible-swatch {
-  background: #ffe599;
+  background: var(--grid-possible-swatch);
 }
 
 .overlap-swatch {
-  background: #b6d7a8;
-  border: 2px solid #e6a800;
+  background: var(--grid-committed-swatch);
+  border: 2px solid var(--grid-overlap-border);
 }
 
 /* --- Holiday reference list --- */
@@ -791,7 +838,7 @@ body {
 .holiday-reference li {
   font-size: 0.85em;
   padding: 1px 0;
-  color: #cc0000;
+  color: var(--grid-holiday-color);
 }
 
 /* --- Print styles --- */
