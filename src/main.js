@@ -301,7 +301,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 document.addEventListener('click', (e) => {
-  if (!settingsPanel.hidden && !settingsPanel.contains(e.target) && e.target !== settingsBtn) {
+  if (!settingsPanel.hidden && !settingsPanel.contains(e.target) && e.target !== settingsBtn && e.target.isConnected) {
     settingsPanel.hidden = true;
     settingsBtn.setAttribute('aria-expanded', 'false');
   }
