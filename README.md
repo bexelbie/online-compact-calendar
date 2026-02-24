@@ -67,11 +67,16 @@ index.html           # Single-page app entry point
 
 ## Deployment
 
-Hosted on Azure Static Web Apps with GitHub Actions CI/CD. Pushes to `main` trigger automatic builds and deployments. The site is available at [cc.bexelbie.com](https://cc.bexelbie.com).
+Hosted on Azure Static Web Apps with GitHub Actions CI/CD.
+
+- `ci.yml` runs tests/build on pushes and PRs to `main` and `beta`
+- `deploy.yml` deploys every push to `beta` (beta site)
+- `release.yml` runs on `v*` tags and deploys production (main release flow)
+- Beta tags (for example `v2.1.0-beta.1`) are optional and informational only
 
 ### Infrastructure Setup
 
-The Azure infrastructure was created with the Azure CLI. To recreate from scratch:
+The Azure infrastructure was created with the Azure CLI.
 
 ```bash
 # Create resource group
@@ -79,35 +84,63 @@ az group create \
   --name rg-compact-calendar \
   --location westeurope
 
-# Create Static Web App (free tier)
+# Create production Static Web App
 az staticwebapp create \
   --name compact-calendar \
   --resource-group rg-compact-calendar \
   --location westeurope
 
-# Get the deployment token (store as AZURE_STATIC_WEB_APPS_API_TOKEN secret in GitHub)
+# Create beta Static Web App
+az staticwebapp create \
+  --name compact-calendar-beta \
+  --resource-group rg-compact-calendar \
+  --location westeurope
+
+# Get production deployment token (store as AZURE_STATIC_WEB_APPS_API_TOKEN in GitHub)
 az staticwebapp secrets list \
   --name compact-calendar \
   --resource-group rg-compact-calendar \
   --query "properties.apiKey" -o tsv
 
-# Configure custom domain
+# Get beta deployment token (store as AZURE_STATIC_WEB_APPS_BETA_API_TOKEN in GitHub)
+az staticwebapp secrets list \
+  --name compact-calendar-beta \
+  --resource-group rg-compact-calendar \
+  --query "properties.apiKey" -o tsv
+
+# Configure production custom domain
 az staticwebapp hostname set \
   --name compact-calendar \
   --resource-group rg-compact-calendar \
   --hostname cc.bexelbie.com
+
+# Configure beta custom domain (after DNS CNAME exists)
+az staticwebapp hostname set \
+  --name compact-calendar-beta \
+  --resource-group rg-compact-calendar \
+  --hostname beta-cc.bexelbie.com
 ```
 
-The custom domain requires a CNAME record pointing `cc.bexelbie.com` to the Static Web App's default hostname:
+Each custom domain requires a CNAME to the corresponding default hostname:
 
 ```bash
+# Production default hostname
 az staticwebapp show \
   --name compact-calendar \
   --resource-group rg-compact-calendar \
   --query "defaultHostname" -o tsv
+
+# Beta default hostname
+az staticwebapp show \
+  --name compact-calendar-beta \
+  --resource-group rg-compact-calendar \
+  --query "defaultHostname" -o tsv
 ```
 
-The GitHub Actions workflow (`.github/workflows/deploy.yml`) uses the `AZURE_STATIC_WEB_APPS_API_TOKEN` secret to authenticate deployments.
+GitHub Actions secrets used by deployment workflows:
+
+- `AZURE_STATIC_WEB_APPS_API_TOKEN` for production deploys
+- `AZURE_STATIC_WEB_APPS_BETA_API_TOKEN` for beta branch deploys
 
 ## Privacy
 

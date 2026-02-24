@@ -6,12 +6,12 @@ name: CI
 on:
   push:
     branches:
-      - '**'
-    tags-ignore:
-      - '**'
+      - main
+      - beta
   pull_request:
     branches:
-      - '**'
+      - main
+      - beta
   workflow_dispatch:
   workflow_call:
 
