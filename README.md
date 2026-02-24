@@ -13,13 +13,15 @@ For more background on why this exists, see the [blog post](https://www.bexelbie
 
 ## Features
 
-- ISO 8601 week numbers, Monday start
-- Two event bands: **Committed** (green) and **Possible** (yellow)
+- Entire year at a glance with ISO 8601 week numbers, Monday start
+- Up to 6 calendars with colorblind-safe colors for committed and possible time
 - Load events from ICS files or webcal/HTTPS URLs (e.g., iCloud published calendars)
 - Built-in demo data to explore the calendar without your own files
 - Country-selectable public holidays via [Nager.Date API](https://date.nager.at/)
 - Share your calendar view via a URL — settings are encoded in the URL fragment and never sent to any server
-- Font size controls and print-friendly layout
+- Adjustable font size and print-friendly layout
+- High-contrast grid option for color-blind users
+- Keyboard and screen-reader friendly (ARIA attributes, focus management)
 - All data stays in the browser (localStorage for preferences and caching)
 - Server-side CORS proxy for fetching remote ICS URLs
 
@@ -48,10 +50,10 @@ src/
   calendar-grid.js   # Year grid generation (ISO 8601 weeks)
   holidays.js        # Holiday fetching, caching, country selection
   ics-parser.js      # ICS file parsing (VEVENT extraction)
-  renderer.js        # DOM rendering, color precedence, event placement
-  main.js            # App orchestration, UI controls, state management
+  renderer.js        # DOM rendering, legend, event columns, holiday toggle
+  main.js            # App orchestration, multi-calendar state, settings UI
   share.js           # URL-hash-based sharing (encode/decode config)
-  styles.css         # Layout, colors, print styles
+  styles.css         # Layout, colors, accessibility, print styles
 api/
   src/functions/
     ics-proxy.js     # Azure Function: CORS proxy for ICS URLs
@@ -59,7 +61,7 @@ public/
   green-sample.ics          # Demo data: Committed events
   yellow-sample.ics         # Demo data: Possible events
   staticwebapp.config.json  # Azure SWA routing and auth config
-test/                # Vitest test suites
+test/                # Vitest test suites (logic, rendering, a11y, share, etc.)
 index.html           # Single-page app entry point
 ```
 
