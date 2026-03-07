@@ -1,6 +1,15 @@
 # Compact Calendar
 
-A web-based compact calendar inspired by [DSri Seah's Compact Calendar](https://davidseah.com/node/compact-calendar/). Displays an entire year at a glance using ISO 8601 week numbering with two configurable event bands (Committed and Possible) fed from ICS calendar files or URLs.
+## Live Sites
+
+- **Production:** https://cc.bexelbie.com/ — latest stable release of the Compact Calendar
+- **Beta:** https://beta-cc.bexelbie.com/ — tracks the `beta` branch when it differs from `main`
+
+Compact Calendar is a web-based, year-at-a-glance planner inspired by [DSri Seah's Compact Calendar](https://davidseah.com/node/compact-calendar/). It's designed for planning questions that regular calendars handle poorly — which weeks are completely free, how holidays and trips overlap, or whether you can turn two public holidays into a long stretch away from work.
+
+Instead of maintaining a separate spreadsheet, Compact Calendar reads your existing calendars (ICS files or URLs) and renders them into a single-page grid of continuous Monday–Sunday weeks. Up to six calendars are color-coded with a colorblind-safe palette, making it easy to see committed versus possible time at a glance and print or share the result.
+
+For more background on why this exists, see the [blog post](https://www.bexelbie.com/2026/02/18/online-compact-calendar.html).
 
 ## Features
 

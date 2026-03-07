@@ -40,6 +40,41 @@ implementation)
 - YAGNI. The best code is no code. Don't add features we don't need right now.
 - When it doesn't conflict with YAGNI, architect for extensibility and flexibility.
 
+## Process Scaling
+
+YAGNI applies to process, not just code. Match process overhead to task complexity.
+
+**Two modes — state which you're using when starting work:**
+
+**Lightweight process:**
+- Work directly on main
+- Do NOT create commits — bex decides when and how to commit
+- TDD is not required if there's no existing test infrastructure for the component
+- Minimal work tracking (skip todo lists and dev-tracker updates for trivial changes)
+
+**Full process:**
+- Create a feature branch
+- Commit frequently as checkpoints within the branch
+- Follow TDD strictly
+- Track work in todo lists and dev-tracker
+
+**Use lightweight when ALL of these are true:**
+- Change touches ≤ 2 files
+- No existing test suite for the component
+- Change is easily reversible (single `git revert`)
+- Standalone script or config, not part of a larger system
+
+**Use full when ANY of these are true:**
+- Touches 3+ files or a system with existing tests
+- Changes shared infrastructure or APIs
+- Would be painful to revert
+- Adds a new component to an existing system
+
+**Rules:**
+- YOU MUST ask bex before using lightweight process, unless bex has already indicated the task is simple.
+- Full process is the default — proceed without asking.
+- If you start with full process and realize the task is simpler than expected, finish on the branch and merge. Don't switch mid-task.
+
 
 ## Secrets
 
@@ -52,12 +87,14 @@ implementation)
 
 ## Test Driven Development (TDD)
 
-- FOR EVERY NEW FEATURE OR BUGFIX, YOU MUST follow Test Driven Development:
+Under **full process**, YOU MUST follow Test Driven Development for every new feature or bugfix:
     1. Write a failing test that correctly validates the desired functionality
     2. Run the test to confirm it fails as expected
     3. Write ONLY enough code to make the failing test pass
     4. Run the test to confirm success
     5. Refactor if needed while keeping tests green
+
+Under **lightweight process**, TDD is not required when there is no existing test infrastructure for the component. If tests already exist, run them to verify your changes don't break anything.
 
 ## Writing code
 
@@ -102,11 +139,11 @@ If you catch yourself writing "new", "old", "legacy", "wrapper", "unified", or i
 
 - If the project isn't in a git repo, STOP and ask permission to initialize one.
 - YOU MUST STOP and ask how to handle uncommitted changes or untracked files when starting work. Suggest committing existing work first.
-- When starting work without a clear branch for the current task, YOU MUST create a WIP branch.
-- Track all non-trivial changes in git.
-- Commit frequently throughout the development process, even if your high-level tasks are not yet done.
+- Under **full process**: create a feature branch and commit frequently as checkpoints.
+- Under **lightweight process**: work on main and do NOT commit. Bex will commit when ready.
 - NEVER SKIP, EVADE OR DISABLE A PRE-COMMIT HOOK
 - NEVER use `git add -A` unless you've just done a `git status` — don't add random test files to the repo.
+- `working-notes/` and `AGENTS.bex.md` are excluded via `.git/info/exclude`, not `.gitignore`. Do not add them to `.gitignore`.
 
 ## Testing
 
@@ -118,13 +155,30 @@ If you catch yourself writing "new", "old", "legacy", "wrapper", "unified", or i
 - YOU MUST NEVER ignore system or test output — logs and messages often contain CRITICAL information.
 - Test output MUST BE PRISTINE TO PASS. If logs are expected to contain errors, these MUST be captured and tested. If a test is intentionally triggering an error, we *must* capture and validate that the error output is as we expect.
 
+## Working Notes
+
+Some repositories have a `working-notes/` directory in the repo root. This is a symlink to an external location (not tracked in git) used for development planning and tracking. It may not exist — that's fine; nothing should fail if it's missing.
+
+What belongs in `working-notes/`:
+- `dev-tracker.md` (development tracking)
+- Task lists and plans
+- Architectural decision notes
+- Session logs
+
+What does NOT belong in `working-notes/`:
+- `PROJECT_CONTEXT.md` (stays in-repo — it's about the code itself)
+- Secrets (separate concern — see Secrets section)
+- Anything the code depends on at build or runtime
+
 ## Work Tracking
 
 Track your work using whatever native tools are available (todo lists, task trackers, journals, etc.). Use them proactively — don't wait to be asked.
 
 Before starting complex tasks, review available project documentation and tracking for past decisions, lessons learned, and current state.
 
-If a `dev-tracker.md` file exists in this repository, treat it as the shared development tracking document. Update it with current state, decisions made, and outstanding work. It persists across sessions and tools.
+If a `working-notes/dev-tracker.md` file exists in this repository, treat it as the shared development tracking document. Update it with current state, decisions made, and outstanding work. It persists across sessions via external storage, not git.
+
+If `working-notes/` does not exist, fall back to a `dev-tracker.md` in the repo root.
 
 Document architectural decisions and their outcomes for future reference. When you notice something that should be fixed but is unrelated to your current task, document it in your tracking rather than fixing it immediately.
 
