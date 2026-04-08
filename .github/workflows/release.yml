@@ -7,7 +7,6 @@ on:
   push:
     tags:
       - "v*"
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -19,21 +18,11 @@ jobs:
   release:
     needs: test
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Extract release notes from commit message
-        id: release_notes
-        run: |
-          COMMIT_MESSAGE=$(git log -1 --format=%B "${{ github.ref_name }}")
-          echo "message<<EOF" >> $GITHUB_OUTPUT
-          echo "$COMMIT_MESSAGE" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Ensure tag commit is on main
         run: |
@@ -41,11 +30,9 @@ jobs:
           git merge-base --is-ancestor "${{ github.sha }}" origin/main
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          body: ${{ steps.release_notes.outputs.message }}
-          draft: false
-          prerelease: false
+        run: gh release create "$GITHUB_REF_NAME" --notes-from-tag
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   deploy:
     needs: release
