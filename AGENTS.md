@@ -25,6 +25,8 @@ Rule #1: If you want exception to ANY rule, YOU MUST STOP and get explicit permi
 
 If a `PROJECT_CONTEXT.md` file exists in this repository, read it for project-specific context including build commands, architecture, tech stack, testing instructions, and project layout. If no such file exists and you need to document project context for future sessions, create one.
 
+If you want to use a GitHub Releases changelog pattern (release notes from tagged commit messages), load the dedicated release changelog pattern document from the bexelbie-infra knowledge base under ai-prompts/coding-agents/.
+
 ## Proactiveness
 
 When asked to do something, just do it - including obvious follow-up actions needed to complete the task properly.

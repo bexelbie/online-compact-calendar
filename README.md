@@ -11,6 +11,8 @@ Instead of maintaining a separate spreadsheet, Compact Calendar reads your exist
 
 For more background on why this exists, see the [blog post](https://www.bexelbie.com/2026/02/18/online-compact-calendar.html).
 
+![screenshot](example.png)
+
 ## Features
 
 - ISO 8601 week numbers, Monday start
